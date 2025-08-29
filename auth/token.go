@@ -383,5 +383,5 @@ func (p *tokenParser) indicesFromSalts(s [5]int) (tokenIndices, error) {
 // Optional: helper to inject Authorization header into your other requests.
 
 func AuthHeader(req *http.Request, token string) {
-	req.Header.Set("Authorization", "Salty "+token)
+	req.Header.Set("Authorization", "Salter "+token)
 }
