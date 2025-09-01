@@ -1,10 +1,15 @@
 package nepse
 
 import (
-	"context"
-	"fmt"
-	"strings"
-	"time"
+    "context"
+    "fmt"
+    "strings"
+    "time"
+    "net/http"
+    "encoding/json"
+    "io"
+
+    "github.com/voidarchive/nepseauth/auth"
 )
 
 // Market Data GET API Methods
@@ -86,16 +91,26 @@ func (h *HTTPClient) GetNepseSubIndices(ctx context.Context) ([]SubIndex, error)
 		return nil, fmt.Errorf("failed to get NEPSE sub-indices: %w", err)
 	}
 
-	// Filter out the main indices and return sub-indices
-	var subIndices []SubIndex
-	for _, rawIndex := range rawIndices {
-		// Skip main indices (58=NEPSE, 57=Sensitive, 62=Float, 63=Sensitive Float)
-		if rawIndex.ID != 58 && rawIndex.ID != 57 && rawIndex.ID != 62 && rawIndex.ID != 63 {
-			subIndices = append(subIndices, SubIndex(rawIndex))
-		}
-	}
+    // Filter out the main indices and return sub-indices
+    var subIndices []SubIndex
+    for _, rawIndex := range rawIndices {
+        // Skip main indices (58=NEPSE, 57=Sensitive, 62=Float, 63=Sensitive Float)
+        if rawIndex.ID != 58 && rawIndex.ID != 57 && rawIndex.ID != 62 && rawIndex.ID != 63 {
+            subIndices = append(subIndices, SubIndex(rawIndex))
+        }
+    }
 
-	return subIndices, nil
+    // Fallback: if none found (API may only return main indices at times),
+    // include all indices except the main NEPSE Index by name.
+    if len(subIndices) == 0 {
+        for _, rawIndex := range rawIndices {
+            if rawIndex.Index != "NEPSE Index" {
+                subIndices = append(subIndices, SubIndex(rawIndex))
+            }
+        }
+    }
+
+    return subIndices, nil
 }
 
 // GetLiveMarket retrieves live market data
@@ -110,12 +125,103 @@ func (h *HTTPClient) GetLiveMarket(ctx context.Context) ([]LiveMarketEntry, erro
 
 // GetSupplyDemand retrieves supply and demand data
 func (h *HTTPClient) GetSupplyDemand(ctx context.Context) ([]SupplyDemandEntry, error) {
-	var supplyDemand []SupplyDemandEntry
-	err := h.apiRequest(ctx, h.config.APIEndpoints["supply_demand"], &supplyDemand)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get supply demand data: %w", err)
-	}
-	return supplyDemand, nil
+    // The API may return either a plain array or a paginated object with content.
+    // Try array first, then fall back to paginated forms.
+    endpoint := h.config.APIEndpoints["supply_demand"]
+
+    // Attempt simple array decode
+    var arr []SupplyDemandEntry
+    if err := h.apiRequest(ctx, endpoint, &arr); err == nil {
+        return arr, nil
+    }
+
+    // Fallback: fetch raw and decode manually to handle alternate shapes
+    // Build an authenticated request mirroring apiRequestWithRetry but decoding locally.
+    var decodeWithRetry func(retryCount int) ([]SupplyDemandEntry, error)
+    decodeWithRetry = func(retryCount int) ([]SupplyDemandEntry, error) {
+        token, err := h.authManager.AccessToken(ctx)
+        if err != nil {
+            return nil, fmt.Errorf("failed to get access token: %w", err)
+        }
+
+        url := h.config.BaseURL + endpoint
+        req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+        if err != nil {
+            return nil, fmt.Errorf("failed to create request: %w", err)
+        }
+        auth.AuthHeader(req, token)
+        req.Header.Set("Content-Type", "application/json")
+        h.setCommonHeaders(req, true)
+
+        resp, err := h.doRequest(req)
+        if err != nil {
+            return nil, err
+        }
+        defer resp.Body.Close()
+
+        if resp.StatusCode == http.StatusUnauthorized && retryCount == 0 {
+            if err := h.authManager.ForceUpdate(ctx); err != nil {
+                return nil, fmt.Errorf("failed to refresh token: %w", err)
+            }
+            return decodeWithRetry(retryCount + 1)
+        }
+        if resp.StatusCode != http.StatusOK {
+            return nil, MapHTTPStatusToError(resp.StatusCode, resp.Status)
+        }
+
+        body, err := h.getResponseBody(resp)
+        if err != nil {
+            return nil, fmt.Errorf("failed to read response body: %w", err)
+        }
+        defer body.Close()
+
+        // Read all bytes for flexible decoding
+        data, err := io.ReadAll(body)
+        if err != nil {
+            return nil, fmt.Errorf("failed to read response: %w", err)
+        }
+
+        // Try as array
+        var a []SupplyDemandEntry
+        if err := json.Unmarshal(data, &a); err == nil {
+            return a, nil
+        }
+
+        // Try as paginated with content at root
+        var pagRoot struct {
+            Content []SupplyDemandEntry `json:"content"`
+        }
+        if err := json.Unmarshal(data, &pagRoot); err == nil && len(pagRoot.Content) > 0 {
+            return pagRoot.Content, nil
+        }
+
+        // Try as nested object, e.g., { "supplyDemand": { "content": [...] } }
+        var nested map[string]json.RawMessage
+        if err := json.Unmarshal(data, &nested); err == nil {
+            for _, v := range nested {
+                var maybe struct {
+                    Content []SupplyDemandEntry `json:"content"`
+                }
+                if json.Unmarshal(v, &maybe) == nil && len(maybe.Content) > 0 {
+                    return maybe.Content, nil
+                }
+            }
+        }
+
+        // As a last resort, attempt to decode directly into a single object (rare shape)
+        var single SupplyDemandEntry
+        if err := json.Unmarshal(data, &single); err == nil {
+            return []SupplyDemandEntry{single}, nil
+        }
+
+        return nil, NewInvalidServerResponseError("unrecognized supply/demand response shape")
+    }
+
+    items, err := decodeWithRetry(0)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get supply demand data: %w", err)
+    }
+    return items, nil
 }
 
 // Top Lists Methods
@@ -379,16 +485,30 @@ func (h *HTTPClient) FindCompanyBySymbol(ctx context.Context, symbol string) (*C
 
 // GetFloorSheet retrieves the complete floor sheet data
 func (h *HTTPClient) GetFloorSheet(ctx context.Context) ([]FloorSheetEntry, error) {
-	endpoint := fmt.Sprintf("%s?size=500&sort=contractId,desc", h.config.APIEndpoints["floor_sheet"])
+    endpoint := fmt.Sprintf("%s?size=500&sort=contractId,desc", h.config.APIEndpoints["floor_sheet"])
 
-	// Based on error messages, the API returns array directly
-	var floorSheetArray []FloorSheetEntry
-	err := h.apiRequest(ctx, endpoint, &floorSheetArray)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get floor sheet: %w", err)
-	}
+    // Try simple array first
+    var floorSheetArray []FloorSheetEntry
+    if err := h.apiRequest(ctx, endpoint, &floorSheetArray); err == nil {
+        return floorSheetArray, nil
+    }
 
-	return floorSheetArray, nil
+    // Fallback: treat as paginated like company floorsheet
+    var firstPage FloorSheetResponse
+    if err := h.apiRequest(ctx, endpoint, &firstPage); err != nil {
+        return nil, fmt.Errorf("failed to get floor sheet: %w", err)
+    }
+    all := firstPage.FloorSheets.Content
+    total := firstPage.FloorSheets.TotalPages
+    for p := int32(1); p < total; p++ {
+        pageEndpoint := fmt.Sprintf("%s&page=%d", endpoint, p)
+        var page FloorSheetResponse
+        if err := h.apiRequest(ctx, pageEndpoint, &page); err != nil {
+            return nil, fmt.Errorf("failed to get floor sheet page %d: %w", p, err)
+        }
+        all = append(all, page.FloorSheets.Content...)
+    }
+    return all, nil
 }
 
 // GetFloorSheetOf retrieves floor sheet data for a specific security on a specific business date

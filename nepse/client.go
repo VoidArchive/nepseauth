@@ -24,7 +24,8 @@ type Client interface {
 	GetTodaysPrices(ctx context.Context, businessDate string) ([]TodayPrice, error)
 	GetPriceVolumeHistory(ctx context.Context, securityID int32, startDate, endDate string) ([]PriceHistory, error)
 	GetSupplyDemand(ctx context.Context) ([]SupplyDemandEntry, error)
-	GetMarketDepth(ctx context.Context, securityID int32) (*MarketDepth, error)
+    GetMarketDepth(ctx context.Context, securityID int32) (*MarketDepth, error)
+    GetMarketDepthBySymbol(ctx context.Context, symbol string) (*MarketDepth, error)
 
 	// Top Lists
 	GetTopGainers(ctx context.Context) ([]TopListEntry, error)
@@ -62,9 +63,10 @@ type Client interface {
 
 	// Helper Methods
 	FindSecurityBySymbol(ctx context.Context, symbol string) (*Security, error)
-	FindCompanyBySymbol(ctx context.Context, symbol string) (*Company, error)
-	GetFloorSheetBySymbol(ctx context.Context, symbol string, businessDate string) ([]FloorSheetEntry, error)
-	GetPriceVolumeHistoryBySymbol(ctx context.Context, symbol string, startDate, endDate string) ([]PriceHistory, error)
+    FindCompanyBySymbol(ctx context.Context, symbol string) (*Company, error)
+    GetFloorSheetBySymbol(ctx context.Context, symbol string, businessDate string) ([]FloorSheetEntry, error)
+    GetPriceVolumeHistoryBySymbol(ctx context.Context, symbol string, startDate, endDate string) ([]PriceHistory, error)
+    GetCompanyDetailsBySymbol(ctx context.Context, symbol string) (*CompanyDetails, error)
 
 	// Configuration
 	SetTLSVerification(enabled bool)
