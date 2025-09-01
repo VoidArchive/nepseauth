@@ -91,20 +91,7 @@ func (h *HTTPClient) GetNepseSubIndices(ctx context.Context) ([]SubIndex, error)
 	for _, rawIndex := range rawIndices {
 		// Skip main indices (58=NEPSE, 57=Sensitive, 62=Float, 63=Sensitive Float)
 		if rawIndex.ID != 58 && rawIndex.ID != 57 && rawIndex.ID != 62 && rawIndex.ID != 63 {
-			subIndices = append(subIndices, SubIndex{
-				ID:               rawIndex.ID,
-				Index:            rawIndex.Index,
-				Close:            rawIndex.Close,
-				High:             rawIndex.High,
-				Low:              rawIndex.Low,
-				PreviousClose:    rawIndex.PreviousClose,
-				Change:           rawIndex.Change,
-				PerChange:        rawIndex.PerChange,
-				FiftyTwoWeekHigh: rawIndex.FiftyTwoWeekHigh,
-				FiftyTwoWeekLow:  rawIndex.FiftyTwoWeekLow,
-				CurrentValue:     rawIndex.CurrentValue,
-				GeneratedTime:    rawIndex.GeneratedTime,
-			})
+			subIndices = append(subIndices, SubIndex(rawIndex))
 		}
 	}
 
@@ -302,12 +289,9 @@ func (h *HTTPClient) GetSectorScrips(ctx context.Context) (SectorScrips, error) 
 	sectorScrips := make(SectorScrips)
 
 	// Process first 50 securities to avoid overwhelming the API
-	maxSecurities := len(securities)
-	if maxSecurities > 50 {
-		maxSecurities = 50
-	}
+	maxSecurities := min(len(securities), 50)
 
-	for i := 0; i < maxSecurities; i++ {
+	for i := range maxSecurities {
 		security := securities[i]
 
 		// Skip promoter shares (contain "P" suffix typically)
@@ -444,6 +428,7 @@ func (h *HTTPClient) GetFloorSheetOf(ctx context.Context, securityID int32, busi
 }
 
 // Convenience method to get floor sheet by symbol instead of ID
+
 func (h *HTTPClient) GetFloorSheetBySymbol(ctx context.Context, symbol string, businessDate string) ([]FloorSheetEntry, error) {
 	security, err := h.FindSecurityBySymbol(ctx, symbol)
 	if err != nil {
@@ -454,6 +439,7 @@ func (h *HTTPClient) GetFloorSheetBySymbol(ctx context.Context, symbol string, b
 }
 
 // Convenience method to get price history by symbol instead of ID
+
 func (h *HTTPClient) GetPriceVolumeHistoryBySymbol(ctx context.Context, symbol string, startDate, endDate string) ([]PriceHistory, error) {
 	security, err := h.FindSecurityBySymbol(ctx, symbol)
 	if err != nil {
@@ -464,6 +450,7 @@ func (h *HTTPClient) GetPriceVolumeHistoryBySymbol(ctx context.Context, symbol s
 }
 
 // Convenience method to get market depth by symbol instead of ID
+
 func (h *HTTPClient) GetMarketDepthBySymbol(ctx context.Context, symbol string) (*MarketDepth, error) {
 	security, err := h.FindSecurityBySymbol(ctx, symbol)
 	if err != nil {
@@ -474,6 +461,7 @@ func (h *HTTPClient) GetMarketDepthBySymbol(ctx context.Context, symbol string) 
 }
 
 // Convenience method to get company details by symbol instead of ID
+
 func (h *HTTPClient) GetCompanyDetailsBySymbol(ctx context.Context, symbol string) (*CompanyDetails, error) {
 	security, err := h.FindSecurityBySymbol(ctx, symbol)
 	if err != nil {

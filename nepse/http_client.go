@@ -141,10 +141,7 @@ func (h *HTTPClient) doRequest(req *http.Request) (*http.Response, error) {
 	for attempt := 0; attempt <= h.options.MaxRetries; attempt++ {
 		if attempt > 0 {
 			// Calculate backoff delay
-			delay := h.options.RetryDelay * time.Duration(1<<uint(attempt-1))
-			if delay > 30*time.Second {
-				delay = 30 * time.Second
-			}
+			delay := min(h.options.RetryDelay*time.Duration(1<<uint(attempt-1)), 30*time.Second)
 			time.Sleep(delay)
 		}
 
@@ -183,7 +180,7 @@ func (h *HTTPClient) getResponseBody(resp *http.Response) (io.ReadCloser, error)
 }
 
 // setCommonHeaders sets common HTTP headers for requests
-func (h *HTTPClient) setCommonHeaders(req *http.Request, includeAuth bool) {
+func (h *HTTPClient) setCommonHeaders(req *http.Request, _ bool) {
 	// Set headers from config
 	for key, value := range h.config.Headers {
 		if key == "Host" {

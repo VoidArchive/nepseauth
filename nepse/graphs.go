@@ -197,6 +197,7 @@ func (h *HTTPClient) GetDailyScripPriceGraph(ctx context.Context, securityID int
 }
 
 // Convenience method to get daily scrip price graph by symbol instead of ID
+
 func (h *HTTPClient) GetDailyScripPriceGraphBySymbol(ctx context.Context, symbol string) (*GraphResponse, error) {
 	security, err := h.FindSecurityBySymbol(ctx, symbol)
 	if err != nil {
