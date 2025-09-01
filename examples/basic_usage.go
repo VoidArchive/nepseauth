@@ -35,14 +35,15 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 
-    // Helper values
-    symbol := *symbolFlag
-    now := time.Now()
-    startDate := now.AddDate(0, 0, -30)
-    start := startDate.Format("2006-01-02")
-    today := now.Format("2006-01-02")
-    // User-specified business date wins; else we decide based on market status below
-    userBizDate := *bizDateFlag
+	// Helper values
+	symbol := *symbolFlag
+	now := time.Now()
+	startDate := now.AddDate(0, 0, -30)
+	start := startDate.Format("2006-01-02")
+	end := startDate.Format("2006-01-02")
+	today := now.Format("2006-01-02")
+	// User-specified business date wins; else we decide based on market status below
+	userBizDate := *bizDateFlag
 
 	// 1) Market data
 	fmt.Println("\n[Market] Summary")
@@ -52,14 +53,14 @@ func main() {
 		fmt.Printf("- Turnover: %.2f, Trades: %.0f\n", s.TotalTurnover, s.TotalTransactions)
 	}
 
-    fmt.Println("[Market] Status")
-    marketOpen := false
-    if st, err := client.GetMarketStatus(ctx); err != nil {
-        log.Printf("Market status: %v", err)
-    } else {
-        fmt.Printf("- Open: %v (%s)\n", st.IsMarketOpen(), st.IsOpen)
-        marketOpen = st.IsMarketOpen()
-    }
+	fmt.Println("[Market] Status")
+	marketOpen := false
+	if st, err := client.GetMarketStatus(ctx); err != nil {
+		log.Printf("Market status: %v", err)
+	} else {
+		fmt.Printf("- Open: %v (%s)\n", st.IsMarketOpen(), st.IsOpen)
+		marketOpen = st.IsMarketOpen()
+	}
 
 	fmt.Println("[Market] NEPSE Index + Sub-Indices")
 	if idx, err := client.GetNepseIndex(ctx); err != nil {
@@ -123,24 +124,24 @@ func main() {
 	}
 
 	// 3) Price & Trading
-    fmt.Println("\n[Trading] Today, History, Depth, Floor")
-    // Decide effective business date:
-    // - If user provided one, use it
-    // - Else if market is open, use today
-    // - Else use last weekday
-    effBizDate := userBizDate
-    if effBizDate == "" {
-        if marketOpen {
-            effBizDate = today
-        } else {
-            effBizDate = lastWeekday(now).Format("2006-01-02")
-        }
-    }
-    if todays, err := client.GetTodaysPrices(ctx, effBizDate); err != nil {
-        log.Printf("Today's prices (%s): %v", effBizDate, err)
-    } else {
-        fmt.Printf("- Today prices (%s): %d\n", effBizDate, len(todays))
-    }
+	fmt.Println("\n[Trading] Today, History, Depth, Floor")
+	// Decide effective business date:
+	// - If user provided one, use it
+	// - Else if market is open, use today
+	// - Else use last weekday
+	effBizDate := userBizDate
+	if effBizDate == "" {
+		if marketOpen {
+			effBizDate = today
+		} else {
+			effBizDate = lastWeekday(now).Format("2006-01-02")
+		}
+	}
+	if todays, err := client.GetTodaysPrices(ctx, effBizDate); err != nil {
+		log.Printf("Today's prices (%s): %v", effBizDate, err)
+	} else {
+		fmt.Printf("- Today prices (%s): %d\n", effBizDate, len(todays))
+	}
 	if nabilID != 0 {
 		if hist, err := client.GetPriceVolumeHistory(ctx, nabilID, start, end); err != nil {
 			log.Printf("History %d: %v", nabilID, err)
@@ -153,14 +154,14 @@ func main() {
 			fmt.Printf("- Depth(%s) buy/sell levels: %d/%d\n", symbol, len(md.BuyDepth), len(md.SellDepth))
 		}
 		// Floorsheet can be optionally exercised (often 403 or empty depending on day)
-        if *withFloor {
-            if fs, err := client.GetFloorSheetOf(ctx, nabilID, effBizDate); err != nil {
-                fmt.Printf("- Floorsheet(%s): error (%v)\n", effBizDate, err)
-            } else {
-                fmt.Printf("- Floorsheet(%s): %d\n", effBizDate, len(fs))
-            }
-        }
-    }
+		if *withFloor {
+			if fs, err := client.GetFloorSheetOf(ctx, nabilID, effBizDate); err != nil {
+				fmt.Printf("- Floorsheet(%s): error (%v)\n", effBizDate, err)
+			} else {
+				fmt.Printf("- Floorsheet(%s): %d\n", effBizDate, len(fs))
+			}
+		}
+	}
 	if *withFloor {
 		if fsAll, err := client.GetFloorSheet(ctx); err != nil {
 			log.Printf("Floorsheet(all): %v", err)
@@ -299,12 +300,12 @@ func main() {
 	// 6) Helper convenience by symbol
 	fmt.Println("\n[Helpers] By Symbol")
 	if *withFloor {
-        if fs, err := client.GetFloorSheetBySymbol(ctx, symbol, effBizDate); err != nil {
-            fmt.Printf("- FloorsheetBySymbol(%s:%s): error (%v)\n", symbol, effBizDate, err)
-        } else {
-            fmt.Printf("- FloorsheetBySymbol(%s:%s): %d\n", symbol, effBizDate, len(fs))
-        }
-    }
+		if fs, err := client.GetFloorSheetBySymbol(ctx, symbol, effBizDate); err != nil {
+			fmt.Printf("- FloorsheetBySymbol(%s:%s): error (%v)\n", symbol, effBizDate, err)
+		} else {
+			fmt.Printf("- FloorsheetBySymbol(%s:%s): %d\n", symbol, effBizDate, len(fs))
+		}
+	}
 	if hist, err := client.GetPriceVolumeHistoryBySymbol(ctx, symbol, start, end); err != nil {
 		fmt.Printf("- HistoryBySymbol(%s): error (%v)\n", symbol, err)
 	} else {
