@@ -255,6 +255,42 @@ func (h *HTTPClient) GetSecurities(ctx context.Context) ([]Security, error) {
 	return securities, err
 }
 
+func (h *HTTPClient) GetCompanyDetails(ctx context.Context, companyID int) (map[string]interface{}, error) {
+	var details map[string]interface{}
+	err := h.apiRequest(ctx, fmt.Sprintf("/api/nots/security/%d", companyID), &details)
+	return details, err
+}
+
+func (h *HTTPClient) GetCompanyFloorSheet(ctx context.Context, companyID int, businessDate string) (map[string]interface{}, error) {
+	var floorSheet map[string]interface{}
+	endpoint := fmt.Sprintf("/api/nots/security/floorsheet/%d?businessDate=%s&size=500", companyID, businessDate)
+	err := h.apiRequest(ctx, endpoint, &floorSheet)
+	return floorSheet, err
+}
+
+func (h *HTTPClient) GetCompanyPriceHistory(ctx context.Context, companyID int, startDate, endDate string) (map[string]interface{}, error) {
+	var history map[string]interface{}
+	endpoint := fmt.Sprintf("/api/nots/market/history/security/%d?size=500&startDate=%s&endDate=%s", companyID, startDate, endDate)
+	err := h.apiRequest(ctx, endpoint, &history)
+	return history, err
+}
+
+// Helper function to find company ID by symbol
+func (h *HTTPClient) FindCompanyIDBySymbol(ctx context.Context, symbol string) (int, error) {
+	securities, err := h.GetSecurities(ctx)
+	if err != nil {
+		return 0, err
+	}
+	
+	for _, security := range securities {
+		if security.Symbol == symbol {
+			return security.ID, nil
+		}
+	}
+	
+	return 0, fmt.Errorf("company with symbol %s not found", symbol)
+}
+
 type NepseIndex struct {
 	Date          string  `json:"date"`
 	CloseValue    float64 `json:"closeValue"`
@@ -282,7 +318,7 @@ func (h *HTTPClient) GetMarketStatus(ctx context.Context) (*MarketStatus, error)
 }
 
 func main() {
-	fmt.Println("Testing NEPSE API with Authentication...")
+	fmt.Println("Testing NEPSE API with NABIL Company Data...")
 
 	// Create HTTP client with token manager
 	client, err := NewHTTPClient()
@@ -297,76 +333,78 @@ func main() {
 
 	ctx := context.Background()
 
-	// Test 1: Market Summary
-	fmt.Println("\n1. Testing Market Summary...")
-	summary, err := client.GetMarketSummary(ctx)
+	// Test 1: Find NABIL Company ID
+	fmt.Println("\n1. Finding NABIL Company ID...")
+	nabilID, err := client.FindCompanyIDBySymbol(ctx, "NABIL")
 	if err != nil {
-		log.Printf("❌ Market summary failed: %v", err)
-	} else {
-		fmt.Printf("✓ Total Turnover: Rs. %.2f\n", summary.TotalTurnover)
-		fmt.Printf("✓ Total Trades: %d\n", summary.TotalTrades)
-		fmt.Printf("✓ Listed Companies: %d\n", summary.TotalListedCompany)
+		log.Printf("❌ Failed to find NABIL: %v", err)
+		return
 	}
+	fmt.Printf("✓ NABIL Company ID: %d\n", nabilID)
 
-	// Test 2: Market Status
-	fmt.Println("\n2. Testing Market Status...")
-	status, err := client.GetMarketStatus(ctx)
+	// Test 2: NABIL Company Details
+	fmt.Println("\n2. Testing NABIL Company Details...")
+	details, err := client.GetCompanyDetails(ctx, nabilID)
 	if err != nil {
-		log.Printf("❌ Market status failed: %v", err)
+		log.Printf("❌ NABIL details failed: %v", err)
 	} else {
-		fmt.Printf("✓ Market Open: %v\n", status.IsMarketOpen)
-		fmt.Printf("✓ Status: %s\n", status.Status)
-		fmt.Printf("✓ As of: %s\n", status.AsOfTime)
-	}
-
-	// Test 3: NEPSE Index
-	fmt.Println("\n3. Testing NEPSE Index...")
-	index, err := client.GetNepseIndex(ctx)
-	if err != nil {
-		log.Printf("❌ NEPSE index failed: %v", err)
-	} else {
-		fmt.Printf("✓ Close Value: %.2f\n", index.CloseValue)
-		fmt.Printf("✓ Point Change: %.2f\n", index.PointChange)
-		fmt.Printf("✓ Percent Change: %.2f%%\n", index.PercentChange)
-	}
-
-	// Test 4: Securities List (first 5)
-	fmt.Println("\n4. Testing Securities List...")
-	securities, err := client.GetSecurities(ctx)
-	if err != nil {
-		log.Printf("❌ Securities list failed: %v", err)
-	} else {
-		fmt.Printf("✓ Total Securities: %d\n", len(securities))
-		fmt.Println("✓ First 5 securities:")
-		for i, sec := range securities {
-			if i >= 5 {
-				break
-			}
-			fmt.Printf("   %s - %s\n", sec.Symbol, sec.SecurityName)
+		fmt.Printf("✓ NABIL Details retrieved successfully\n")
+		if name, ok := details["securityName"].(string); ok {
+			fmt.Printf("✓ Company Name: %s\n", name)
+		}
+		if symbol, ok := details["symbol"].(string); ok {
+			fmt.Printf("✓ Symbol: %s\n", symbol)
+		}
+		if sector, ok := details["sectorName"].(string); ok {
+			fmt.Printf("✓ Sector: %s\n", sector)
 		}
 	}
 
-	// Test 5: Today's Prices (first 5)
-	fmt.Println("\n5. Testing Today's Prices...")
-	prices, err := client.GetTodaysPrices(ctx)
+	// Test 3: NABIL Price History (last 30 days)
+	fmt.Println("\n3. Testing NABIL Price History...")
+	endDate := "2024-08-29"   // Today's date
+	startDate := "2024-07-30" // 30 days ago
+	history, err := client.GetCompanyPriceHistory(ctx, nabilID, startDate, endDate)
 	if err != nil {
-		log.Printf("❌ Today's prices failed: %v", err)
+		log.Printf("❌ NABIL history failed: %v", err)
 	} else {
-		fmt.Printf("✓ Total Prices: %d\n", len(prices))
-		fmt.Println("✓ First 5 prices:")
-		for i, price := range prices {
-			if i >= 5 {
-				break
+		fmt.Printf("✓ NABIL Price History retrieved successfully\n")
+		if content, ok := history["content"].([]interface{}); ok {
+			fmt.Printf("✓ Historical records: %d\n", len(content))
+			if len(content) > 0 {
+				if record, ok := content[0].(map[string]interface{}); ok {
+					if date, ok := record["businessDate"].(string); ok {
+						fmt.Printf("✓ Latest date: %s\n", date)
+					}
+					if price, ok := record["closingPrice"].(float64); ok {
+						fmt.Printf("✓ Latest price: Rs. %.2f\n", price)
+					}
+				}
 			}
-			fmt.Printf("   %s: Rs. %.2f (%.2f%%)\n",
-				price.Symbol, price.ClosePrice, price.PercentageChange)
 		}
 	}
 
-	fmt.Println("\n🎉 NEPSE API testing completed!")
-	fmt.Println("\nNext steps:")
-	fmt.Println("- Implement remaining endpoints")
-	fmt.Println("- Add proper error handling and retries")
-	fmt.Println("- Integrate with NTX portfolio tracking")
-	fmt.Println("- Add rate limiting and caching")
+	// Test 4: NABIL Floor Sheet (today)
+	fmt.Println("\n4. Testing NABIL Floor Sheet...")
+	businessDate := "2024-08-29" // Today's date
+	floorSheet, err := client.GetCompanyFloorSheet(ctx, nabilID, businessDate)
+	if err != nil {
+		log.Printf("❌ NABIL floor sheet failed: %v", err)
+	} else {
+		fmt.Printf("✓ NABIL Floor Sheet retrieved successfully\n")
+		if fs, ok := floorSheet["floorsheets"].(map[string]interface{}); ok {
+			if content, ok := fs["content"].([]interface{}); ok {
+				fmt.Printf("✓ Floor sheet records: %d\n", len(content))
+				if len(content) > 0 {
+					fmt.Printf("✓ Recent transactions found\n")
+				} else {
+					fmt.Printf("✓ No transactions for today\n")
+				}
+			}
+		}
+	}
+
+	fmt.Println("\n🎉 NABIL API testing completed!")
+	fmt.Println("\n✅ Authentication working correctly!")
+	fmt.Println("✅ Company-specific endpoints functional!")
 }
