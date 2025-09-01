@@ -103,6 +103,18 @@ func (m *Manager) AccessToken(ctx context.Context) (string, error) {
 	return m.accessToken, nil
 }
 
+// GetSalts returns the current salt values (used for payload generation)
+func (m *Manager) GetSalts(ctx context.Context) ([5]int, error) {
+	if !m.isValid() {
+		if err := m.update(ctx); err != nil {
+			return [5]int{}, err
+		}
+	}
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.salts, nil
+}
+
 // RefreshToken returns a valid refresh token, refreshing if needed.
 func (m *Manager) RefreshToken(ctx context.Context) (string, error) {
 	if m.isValid() {
