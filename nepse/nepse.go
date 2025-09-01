@@ -69,7 +69,7 @@ func NewClient(options *Options) (Client, error) {
 	if options == nil {
 		options = DefaultOptions()
 	}
-	
+
 	return NewHTTPClient(options)
 }
 
@@ -91,10 +91,10 @@ func NewClientWithTLS(tlsVerification bool) (Client, error) {
 const (
 	// Version is the current version of the nepse package
 	Version = "1.0.0"
-	
+
 	// UserAgent is the default user agent string used by the client
 	UserAgent = "nepse-go/" + Version
-	
+
 	// DefaultBaseURL is the default NEPSE API base URL
 	DefaultBaseURL = "https://www.nepalstock.com"
 )
@@ -103,16 +103,16 @@ const (
 var (
 	// ErrTokenExpired can be used with errors.Is() to check for token expiration
 	ErrTokenExpired = NewTokenExpiredError()
-	
+
 	// ErrNetworkError can be used with errors.Is() to check for network errors
 	ErrNetworkError = NewNetworkError(nil)
-	
+
 	// ErrUnauthorized can be used with errors.Is() to check for authorization errors
 	ErrUnauthorized = NewUnauthorizedError("unauthorized")
-	
+
 	// ErrNotFound can be used with errors.Is() to check for not found errors
 	ErrNotFound = NewNotFoundError("resource")
-	
+
 	// ErrRateLimit can be used with errors.Is() to check for rate limit errors
 	ErrRateLimit = NewRateLimitError()
 )
@@ -121,32 +121,32 @@ var (
 const (
 	// DateFormat is the standard date format used by NEPSE API (YYYY-MM-DD)
 	DateFormat = "2006-01-02"
-	
+
 	// DateTimeFormat is the standard datetime format used by NEPSE API
 	DateTimeFormat = "2006-01-02 15:04:05"
 )
 
 // Sector names commonly used in the NEPSE market
 const (
-	SectorBanking            = "Banking"
-	SectorDevelopmentBank    = "Development Bank"
-	SectorFinance            = "Finance"
-	SectorHotelTourism       = "Hotel Tourism"
-	SectorHydro              = "Hydro"
-	SectorInvestment         = "Investment"
-	SectorLifeInsurance      = "Life Insurance"
-	SectorManufacturing      = "Manufacturing"
-	SectorMicrofinance       = "Microfinance"
-	SectorMutualFund         = "Mutual Fund"
-	SectorNonLifeInsurance   = "Non Life Insurance"
-	SectorOthers             = "Others"
-	SectorTrading            = "Trading"
-	SectorPromoterShare      = "Promoter Share"
+	SectorBanking          = "Banking"
+	SectorDevelopmentBank  = "Development Bank"
+	SectorFinance          = "Finance"
+	SectorHotelTourism     = "Hotel Tourism"
+	SectorHydro            = "Hydro"
+	SectorInvestment       = "Investment"
+	SectorLifeInsurance    = "Life Insurance"
+	SectorManufacturing    = "Manufacturing"
+	SectorMicrofinance     = "Microfinance"
+	SectorMutualFund       = "Mutual Fund"
+	SectorNonLifeInsurance = "Non Life Insurance"
+	SectorOthers           = "Others"
+	SectorTrading          = "Trading"
+	SectorPromoterShare    = "Promoter Share"
 )
 
 // BatchRequest represents a batch operation configuration
 type BatchRequest struct {
-	MaxConcurrency int           // Maximum number of concurrent requests
+	MaxConcurrency int             // Maximum number of concurrent requests
 	Timeout        context.Context // Context for timeout control
 }
 

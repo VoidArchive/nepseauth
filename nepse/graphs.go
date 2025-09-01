@@ -187,7 +187,7 @@ func (h *HTTPClient) GetDailyTradingSubindexGraph(ctx context.Context) (*GraphRe
 // GetDailyScripPriceGraph retrieves daily price graph data for a specific security
 func (h *HTTPClient) GetDailyScripPriceGraph(ctx context.Context, securityID int32) (*GraphResponse, error) {
 	endpoint := fmt.Sprintf("%s%d", h.config.APIEndpoints["company_daily_graph"], securityID)
-	
+
 	var graphArray []GraphDataPoint
 	err := h.apiRequest(ctx, endpoint, &graphArray)
 	if err != nil {
@@ -202,7 +202,7 @@ func (h *HTTPClient) GetDailyScripPriceGraphBySymbol(ctx context.Context, symbol
 	if err != nil {
 		return nil, fmt.Errorf("failed to find security %s: %w", symbol, err)
 	}
-	
+
 	return h.GetDailyScripPriceGraph(ctx, security.ID)
 }
 
@@ -211,23 +211,23 @@ func (h *HTTPClient) GetDailyScripPriceGraphBySymbol(ctx context.Context, symbol
 // GetAllSubIndexGraphs retrieves all sub-index graph data in a single call
 func (h *HTTPClient) GetAllSubIndexGraphs(ctx context.Context) (map[string]*GraphResponse, error) {
 	subIndexMethods := map[string]func(context.Context) (*GraphResponse, error){
-		"banking":             h.GetDailyBankSubindexGraph,
-		"development_bank":    h.GetDailyDevelopmentBankSubindexGraph,
-		"finance":             h.GetDailyFinanceSubindexGraph,
-		"hotel_tourism":       h.GetDailyHotelTourismSubindexGraph,
-		"hydro":               h.GetDailyHydroSubindexGraph,
-		"investment":          h.GetDailyInvestmentSubindexGraph,
-		"life_insurance":      h.GetDailyLifeInsuranceSubindexGraph,
-		"manufacturing":       h.GetDailyManufacturingSubindexGraph,
-		"microfinance":        h.GetDailyMicrofinanceSubindexGraph,
-		"mutual_fund":         h.GetDailyMutualfundSubindexGraph,
-		"non_life_insurance":  h.GetDailyNonLifeInsuranceSubindexGraph,
-		"others":              h.GetDailyOthersSubindexGraph,
-		"trading":             h.GetDailyTradingSubindexGraph,
+		"banking":            h.GetDailyBankSubindexGraph,
+		"development_bank":   h.GetDailyDevelopmentBankSubindexGraph,
+		"finance":            h.GetDailyFinanceSubindexGraph,
+		"hotel_tourism":      h.GetDailyHotelTourismSubindexGraph,
+		"hydro":              h.GetDailyHydroSubindexGraph,
+		"investment":         h.GetDailyInvestmentSubindexGraph,
+		"life_insurance":     h.GetDailyLifeInsuranceSubindexGraph,
+		"manufacturing":      h.GetDailyManufacturingSubindexGraph,
+		"microfinance":       h.GetDailyMicrofinanceSubindexGraph,
+		"mutual_fund":        h.GetDailyMutualfundSubindexGraph,
+		"non_life_insurance": h.GetDailyNonLifeInsuranceSubindexGraph,
+		"others":             h.GetDailyOthersSubindexGraph,
+		"trading":            h.GetDailyTradingSubindexGraph,
 	}
-	
+
 	results := make(map[string]*GraphResponse)
-	
+
 	for name, method := range subIndexMethods {
 		graphData, err := method(ctx)
 		if err != nil {
@@ -235,21 +235,21 @@ func (h *HTTPClient) GetAllSubIndexGraphs(ctx context.Context) (map[string]*Grap
 		}
 		results[name] = graphData
 	}
-	
+
 	return results, nil
 }
 
 // GetAllMainIndexGraphs retrieves all main index graph data in a single call
 func (h *HTTPClient) GetAllMainIndexGraphs(ctx context.Context) (map[string]*GraphResponse, error) {
 	mainIndexMethods := map[string]func(context.Context) (*GraphResponse, error){
-		"nepse":            h.GetDailyNepseIndexGraph,
-		"sensitive":        h.GetDailySensitiveIndexGraph,
-		"float":            h.GetDailyFloatIndexGraph,
-		"sensitive_float":  h.GetDailySensitiveFloatIndexGraph,
+		"nepse":           h.GetDailyNepseIndexGraph,
+		"sensitive":       h.GetDailySensitiveIndexGraph,
+		"float":           h.GetDailyFloatIndexGraph,
+		"sensitive_float": h.GetDailySensitiveFloatIndexGraph,
 	}
-	
+
 	results := make(map[string]*GraphResponse)
-	
+
 	for name, method := range mainIndexMethods {
 		graphData, err := method(ctx)
 		if err != nil {
@@ -257,6 +257,6 @@ func (h *HTTPClient) GetAllMainIndexGraphs(ctx context.Context) (map[string]*Gra
 		}
 		results[name] = graphData
 	}
-	
+
 	return results, nil
 }

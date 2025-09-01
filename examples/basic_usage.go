@@ -83,7 +83,7 @@ func main() {
 			fmt.Printf("✅ 52-Week High: Rs. %.2f\n", details.FiftyTwoWeekHigh)
 		}
 
-		// Test 6: Get Market Depth  
+		// Test 6: Get Market Depth
 		fmt.Println("\n📊 6. Getting NABIL Market Depth...")
 		marketDepth, err := client.GetMarketDepth(ctx, nabilSecurity.ID)
 		if err != nil {
@@ -103,7 +103,7 @@ func main() {
 	} else {
 		fmt.Printf("✅ Top gainers found: %d\n", len(topGainers))
 		if len(topGainers) > 0 {
-			fmt.Printf("✅ Top gainer: %s (%.2f%%)\n", 
+			fmt.Printf("✅ Top gainer: %s (%.2f%%)\n",
 				topGainers[0].Symbol, topGainers[0].PercentageChange)
 		}
 	}

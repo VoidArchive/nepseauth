@@ -160,8 +160,7 @@ The library is organized into several packages:
 - **`nepse/client.go`** - Client interface definition
 - **`nepse/http_client.go`** - HTTP client implementation
 - **`nepse/market_data.go`** - GET API methods
-- **`nepse/graphs.go`** - POST API methods for graph data
-- **`nepse/payloads.go`** - Payload generation logic
+- **`nepse/graphs.go`** - GET API methods for graph data
 
 ## Key Differences from Python Version
 
@@ -181,6 +180,7 @@ See the `examples/` directory for more comprehensive usage examples:
 
 ## Testing
 
+### Against Real NEPSE API
 ```bash
 # Run the main test with NABIL data
 go run main.go
@@ -188,6 +188,26 @@ go run main.go
 # Run the basic usage example
 go run examples/basic_usage.go
 ```
+
+### Against Mock Server
+```bash
+# Start the mock API server
+make run-mock
+
+# In another terminal, run the demo
+go run examples/mock_demo.go
+
+# View interactive API documentation
+open http://localhost:8080/swagger/
+```
+
+### API Documentation
+This library includes comprehensive API documentation and a mock server:
+
+- **📖 API Documentation**: `API_README.md`
+- **🎭 Mock Server**: Fully functional NEPSE API mock
+- **📋 OpenAPI 3.0 Spec**: `api/swagger.yaml`
+- **🐳 Docker Support**: Ready for containerized deployment
 
 ## Contributing
 

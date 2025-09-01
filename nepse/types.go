@@ -30,18 +30,18 @@ func (m *MarketStatus) IsMarketOpen() bool {
 
 // NepseIndexRaw represents the raw NEPSE index response item
 type NepseIndexRaw struct {
-	ID                int32   `json:"id"`
-	Index             string  `json:"index"`
-	Close             float64 `json:"close"`
-	High              float64 `json:"high"`
-	Low               float64 `json:"low"`
-	PreviousClose     float64 `json:"previousClose"`
-	Change            float64 `json:"change"`
-	PerChange         float64 `json:"perChange"`
-	FiftyTwoWeekHigh  float64 `json:"fiftyTwoWeekHigh"`
-	FiftyTwoWeekLow   float64 `json:"fiftyTwoWeekLow"`
-	CurrentValue      float64 `json:"currentValue"`
-	GeneratedTime     string  `json:"generatedTime"`
+	ID               int32   `json:"id"`
+	Index            string  `json:"index"`
+	Close            float64 `json:"close"`
+	High             float64 `json:"high"`
+	Low              float64 `json:"low"`
+	PreviousClose    float64 `json:"previousClose"`
+	Change           float64 `json:"change"`
+	PerChange        float64 `json:"perChange"`
+	FiftyTwoWeekHigh float64 `json:"fiftyTwoWeekHigh"`
+	FiftyTwoWeekLow  float64 `json:"fiftyTwoWeekLow"`
+	CurrentValue     float64 `json:"currentValue"`
+	GeneratedTime    string  `json:"generatedTime"`
 }
 
 // NepseIndex represents the NEPSE main index (ID 58)
@@ -60,32 +60,32 @@ type NepseIndex struct {
 
 // SubIndex represents a sector sub-index (uses same structure as NepseIndexRaw)
 type SubIndex struct {
-	ID                int32   `json:"id"`
-	Index             string  `json:"index"`
-	Close             float64 `json:"close"`
-	High              float64 `json:"high"`
-	Low               float64 `json:"low"`
-	PreviousClose     float64 `json:"previousClose"`
-	Change            float64 `json:"change"`
-	PerChange         float64 `json:"perChange"`
-	FiftyTwoWeekHigh  float64 `json:"fiftyTwoWeekHigh"`
-	FiftyTwoWeekLow   float64 `json:"fiftyTwoWeekLow"`
-	CurrentValue      float64 `json:"currentValue"`
-	GeneratedTime     string  `json:"generatedTime"`
+	ID               int32   `json:"id"`
+	Index            string  `json:"index"`
+	Close            float64 `json:"close"`
+	High             float64 `json:"high"`
+	Low              float64 `json:"low"`
+	PreviousClose    float64 `json:"previousClose"`
+	Change           float64 `json:"change"`
+	PerChange        float64 `json:"perChange"`
+	FiftyTwoWeekHigh float64 `json:"fiftyTwoWeekHigh"`
+	FiftyTwoWeekLow  float64 `json:"fiftyTwoWeekLow"`
+	CurrentValue     float64 `json:"currentValue"`
+	GeneratedTime    string  `json:"generatedTime"`
 }
 
 // Security represents a listed security/company
 type Security struct {
-	ID                    int32   `json:"id"`
-	Symbol                string  `json:"symbol"`
-	SecurityName          string  `json:"securityName"`
-	IsSuspended          bool    `json:"isSuspended"`
-	SectorName           string  `json:"sectorName"`
-	Instrument           string  `json:"instrument"`
-	RegulatoryCategoryID int32   `json:"regulatoryCategoryId"`
-	ShareGroupID         int32   `json:"shareGroupId"`
-	ActiveStatus         string  `json:"activeStatus"`
-	ListingDate          string  `json:"listingDate"`
+	ID                   int32  `json:"id"`
+	Symbol               string `json:"symbol"`
+	SecurityName         string `json:"securityName"`
+	IsSuspended          bool   `json:"isSuspended"`
+	SectorName           string `json:"sectorName"`
+	Instrument           string `json:"instrument"`
+	RegulatoryCategoryID int32  `json:"regulatoryCategoryId"`
+	ShareGroupID         int32  `json:"shareGroupId"`
+	ActiveStatus         string `json:"activeStatus"`
+	ListingDate          string `json:"listingDate"`
 }
 
 // Company represents company information (different from Security)
@@ -145,20 +145,20 @@ type PriceHistory struct {
 
 // FloorSheetEntry represents a single floor sheet entry
 type FloorSheetEntry struct {
-	ContractID         int64   `json:"contractId"`
-	StockSymbol        string  `json:"stockSymbol"`
-	SecurityName       string  `json:"securityName"`
-	BuyerMemberID      int32   `json:"buyerMemberId"`
-	SellerMemberID     int32   `json:"sellerMemberId"`
-	ContractQuantity   int64   `json:"contractQuantity"`
-	ContractRate       float64 `json:"contractRate"`
-	BusinessDate       string  `json:"businessDate"`
-	TradeTime          string  `json:"tradeTime"`
-	SecurityID         int32   `json:"securityId"`
-	ContractAmount     float64 `json:"contractAmount"`
-	BuyerBrokerName    string  `json:"buyerBrokerName"`
-	SellerBrokerName   string  `json:"sellerBrokerName"`
-	TradeBookID        int64   `json:"tradeBookId"`
+	ContractID       int64   `json:"contractId"`
+	StockSymbol      string  `json:"stockSymbol"`
+	SecurityName     string  `json:"securityName"`
+	BuyerMemberID    int32   `json:"buyerMemberId"`
+	SellerMemberID   int32   `json:"sellerMemberId"`
+	ContractQuantity int64   `json:"contractQuantity"`
+	ContractRate     float64 `json:"contractRate"`
+	BusinessDate     string  `json:"businessDate"`
+	TradeTime        string  `json:"tradeTime"`
+	SecurityID       int32   `json:"securityId"`
+	ContractAmount   float64 `json:"contractAmount"`
+	BuyerBrokerName  string  `json:"buyerBrokerName"`
+	SellerBrokerName string  `json:"sellerBrokerName"`
+	TradeBookID      int64   `json:"tradeBookId"`
 }
 
 // FloorSheetResponse represents the paginated floor sheet response
@@ -177,7 +177,7 @@ type FloorSheetResponse struct {
 
 // MarketDepth represents market depth information for a security
 type MarketDepth struct {
-	SecurityID   int32 `json:"securityId"`
+	SecurityID   int32  `json:"securityId"`
 	Symbol       string `json:"symbol"`
 	SecurityName string `json:"securityName"`
 	BuyDepth     []struct {
@@ -210,12 +210,12 @@ type TopListEntry struct {
 
 // SupplyDemandEntry represents supply and demand data
 type SupplyDemandEntry struct {
-	Symbol           string  `json:"symbol"`
-	SecurityName     string  `json:"securityName"`
-	SupplyQuantity   int64   `json:"supplyQuantity"`
-	SupplyAmount     float64 `json:"supplyAmount"`
-	DemandQuantity   int64   `json:"demandQuantity"`
-	DemandAmount     float64 `json:"demandAmount"`
+	Symbol            string  `json:"symbol"`
+	SecurityName      string  `json:"securityName"`
+	SupplyQuantity    int64   `json:"supplyQuantity"`
+	SupplyAmount      float64 `json:"supplyAmount"`
+	DemandQuantity    int64   `json:"demandQuantity"`
+	DemandAmount      float64 `json:"demandAmount"`
 	DemandSupplyRatio float64 `json:"demandSupplyRatio"`
 }
 
@@ -233,19 +233,19 @@ type GraphResponse struct {
 // CompanyDetailsRaw represents the raw nested company details response
 type CompanyDetailsRaw struct {
 	SecurityMcsData struct {
-		SecurityID           string  `json:"securityId"`
-		OpenPrice            float64 `json:"openPrice"`
-		HighPrice            float64 `json:"highPrice"`
-		LowPrice             float64 `json:"lowPrice"`
-		TotalTradeQuantity   int64   `json:"totalTradeQuantity"`
-		TotalTrades          int32   `json:"totalTrades"`
-		LastTradedPrice      float64 `json:"lastTradedPrice"`
-		PreviousClose        float64 `json:"previousClose"`
-		BusinessDate         string  `json:"businessDate"`
-		ClosePrice           float64 `json:"closePrice"`
-		FiftyTwoWeekHigh     float64 `json:"fiftyTwoWeekHigh"`
-		FiftyTwoWeekLow      float64 `json:"fiftyTwoWeekLow"`
-		LastUpdatedDateTime  string  `json:"lastUpdatedDateTime"`
+		SecurityID          string  `json:"securityId"`
+		OpenPrice           float64 `json:"openPrice"`
+		HighPrice           float64 `json:"highPrice"`
+		LowPrice            float64 `json:"lowPrice"`
+		TotalTradeQuantity  int64   `json:"totalTradeQuantity"`
+		TotalTrades         int32   `json:"totalTrades"`
+		LastTradedPrice     float64 `json:"lastTradedPrice"`
+		PreviousClose       float64 `json:"previousClose"`
+		BusinessDate        string  `json:"businessDate"`
+		ClosePrice          float64 `json:"closePrice"`
+		FiftyTwoWeekHigh    float64 `json:"fiftyTwoWeekHigh"`
+		FiftyTwoWeekLow     float64 `json:"fiftyTwoWeekLow"`
+		LastUpdatedDateTime string  `json:"lastUpdatedDateTime"`
 	} `json:"securityMcsData"`
 	SecurityData struct {
 		ID               int32  `json:"id"`
@@ -260,14 +260,14 @@ type CompanyDetailsRaw struct {
 
 // CompanyDetails represents processed company information
 type CompanyDetails struct {
-	ID                  int32   `json:"id"`
-	Symbol              string  `json:"symbol"`
-	SecurityName        string  `json:"securityName"`
-	SectorName          string  `json:"sectorName"`
-	Email               string  `json:"email"`
-	ActiveStatus        string  `json:"activeStatus"`
-	PermittedToTrade    string  `json:"permittedToTrade"`
-	
+	ID               int32  `json:"id"`
+	Symbol           string `json:"symbol"`
+	SecurityName     string `json:"securityName"`
+	SectorName       string `json:"sectorName"`
+	Email            string `json:"email"`
+	ActiveStatus     string `json:"activeStatus"`
+	PermittedToTrade string `json:"permittedToTrade"`
+
 	// Market data fields
 	OpenPrice           float64 `json:"openPrice"`
 	HighPrice           float64 `json:"highPrice"`
@@ -311,4 +311,3 @@ type PaginatedResponse[T any] struct {
 	Last             bool  `json:"last"`
 	NumberOfElements int32 `json:"numberOfElements"`
 }
-

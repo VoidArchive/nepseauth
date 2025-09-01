@@ -16,7 +16,7 @@ func (h *HTTPClient) GetMarketSummary(ctx context.Context) (*MarketSummary, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to get market summary: %w", err)
 	}
-	
+
 	// Convert array response to structured format
 	summary := &MarketSummary{}
 	for _, item := range rawItems {
@@ -35,7 +35,7 @@ func (h *HTTPClient) GetMarketSummary(ctx context.Context) (*MarketSummary, erro
 			summary.TotalFloatMarketCap = item.Value
 		}
 	}
-	
+
 	return summary, nil
 }
 
@@ -56,7 +56,7 @@ func (h *HTTPClient) GetNepseIndex(ctx context.Context) (*NepseIndex, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get NEPSE index: %w", err)
 	}
-	
+
 	// Find the main NEPSE index (ID 58)
 	for _, rawIndex := range rawIndices {
 		if rawIndex.ID == 58 && rawIndex.Index == "NEPSE Index" {
@@ -74,7 +74,7 @@ func (h *HTTPClient) GetNepseIndex(ctx context.Context) (*NepseIndex, error) {
 			}, nil
 		}
 	}
-	
+
 	return nil, NewNotFoundError("NEPSE Index")
 }
 
@@ -85,29 +85,29 @@ func (h *HTTPClient) GetNepseSubIndices(ctx context.Context) ([]SubIndex, error)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get NEPSE sub-indices: %w", err)
 	}
-	
+
 	// Filter out the main indices and return sub-indices
 	var subIndices []SubIndex
 	for _, rawIndex := range rawIndices {
 		// Skip main indices (58=NEPSE, 57=Sensitive, 62=Float, 63=Sensitive Float)
 		if rawIndex.ID != 58 && rawIndex.ID != 57 && rawIndex.ID != 62 && rawIndex.ID != 63 {
 			subIndices = append(subIndices, SubIndex{
-				ID:                rawIndex.ID,
-				Index:             rawIndex.Index,
-				Close:             rawIndex.Close,
-				High:              rawIndex.High,
-				Low:               rawIndex.Low,
-				PreviousClose:     rawIndex.PreviousClose,
-				Change:            rawIndex.Change,
-				PerChange:         rawIndex.PerChange,
-				FiftyTwoWeekHigh:  rawIndex.FiftyTwoWeekHigh,
-				FiftyTwoWeekLow:   rawIndex.FiftyTwoWeekLow,
-				CurrentValue:      rawIndex.CurrentValue,
-				GeneratedTime:     rawIndex.GeneratedTime,
+				ID:               rawIndex.ID,
+				Index:            rawIndex.Index,
+				Close:            rawIndex.Close,
+				High:             rawIndex.High,
+				Low:              rawIndex.Low,
+				PreviousClose:    rawIndex.PreviousClose,
+				Change:           rawIndex.Change,
+				PerChange:        rawIndex.PerChange,
+				FiftyTwoWeekHigh: rawIndex.FiftyTwoWeekHigh,
+				FiftyTwoWeekLow:  rawIndex.FiftyTwoWeekLow,
+				CurrentValue:     rawIndex.CurrentValue,
+				GeneratedTime:    rawIndex.GeneratedTime,
 			})
 		}
 	}
-	
+
 	return subIndices, nil
 }
 
@@ -191,7 +191,7 @@ func (h *HTTPClient) GetTodaysPrices(ctx context.Context, businessDate string) (
 	if businessDate != "" {
 		endpoint += "?businessDate=" + businessDate + "&size=500"
 	}
-	
+
 	var todayPrices []TodayPrice
 	err := h.apiRequest(ctx, endpoint, &todayPrices)
 	if err != nil {
@@ -202,14 +202,14 @@ func (h *HTTPClient) GetTodaysPrices(ctx context.Context, businessDate string) (
 
 // GetPriceVolumeHistory retrieves price volume history for a security
 func (h *HTTPClient) GetPriceVolumeHistory(ctx context.Context, securityID int32, startDate, endDate string) ([]PriceHistory, error) {
-	endpoint := fmt.Sprintf("%s%d?size=500&startDate=%s&endDate=%s", 
+	endpoint := fmt.Sprintf("%s%d?size=500&startDate=%s&endDate=%s",
 		h.config.APIEndpoints["company_price_volume_history"], securityID, startDate, endDate)
-	
+
 	// The API returns a paginated response with content array
 	var response struct {
 		Content []PriceHistory `json:"content"`
 	}
-	
+
 	err := h.apiRequest(ctx, endpoint, &response)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get price volume history for security %d: %w", securityID, err)
@@ -220,7 +220,7 @@ func (h *HTTPClient) GetPriceVolumeHistory(ctx context.Context, securityID int32
 // GetMarketDepth retrieves market depth information for a security
 func (h *HTTPClient) GetMarketDepth(ctx context.Context, securityID int32) (*MarketDepth, error) {
 	endpoint := fmt.Sprintf("%s%d/", h.config.APIEndpoints["market_depth"], securityID)
-	
+
 	var marketDepth MarketDepth
 	err := h.apiRequest(ctx, endpoint, &marketDepth)
 	if err != nil {
@@ -254,23 +254,23 @@ func (h *HTTPClient) GetCompanyList(ctx context.Context) ([]Company, error) {
 // GetCompanyDetails retrieves detailed information about a specific company/security
 func (h *HTTPClient) GetCompanyDetails(ctx context.Context, securityID int32) (*CompanyDetails, error) {
 	endpoint := fmt.Sprintf("%s%d", h.config.APIEndpoints["company_details"], securityID)
-	
+
 	var rawDetails CompanyDetailsRaw
 	err := h.apiRequest(ctx, endpoint, &rawDetails)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get company details for security %d: %w", securityID, err)
 	}
-	
+
 	// Convert raw nested response to flat structured response
 	details := &CompanyDetails{
-		ID:                  rawDetails.SecurityData.ID,
-		Symbol:              rawDetails.SecurityData.Symbol,
-		SecurityName:        rawDetails.SecurityData.SecurityName,
-		SectorName:          rawDetails.SecurityData.Sector,
-		Email:               rawDetails.SecurityData.Email,
-		ActiveStatus:        rawDetails.SecurityData.ActiveStatus,
-		PermittedToTrade:    rawDetails.SecurityData.PermittedToTrade,
-		
+		ID:               rawDetails.SecurityData.ID,
+		Symbol:           rawDetails.SecurityData.Symbol,
+		SecurityName:     rawDetails.SecurityData.SecurityName,
+		SectorName:       rawDetails.SecurityData.Sector,
+		Email:            rawDetails.SecurityData.Email,
+		ActiveStatus:     rawDetails.SecurityData.ActiveStatus,
+		PermittedToTrade: rawDetails.SecurityData.PermittedToTrade,
+
 		// Market data from securityMcsData
 		OpenPrice:           rawDetails.SecurityMcsData.OpenPrice,
 		HighPrice:           rawDetails.SecurityMcsData.HighPrice,
@@ -285,7 +285,7 @@ func (h *HTTPClient) GetCompanyDetails(ctx context.Context, securityID int32) (*
 		BusinessDate:        rawDetails.SecurityMcsData.BusinessDate,
 		LastUpdatedDateTime: rawDetails.SecurityMcsData.LastUpdatedDateTime,
 	}
-	
+
 	return details, nil
 }
 
@@ -297,19 +297,19 @@ func (h *HTTPClient) GetSectorScrips(ctx context.Context) (SectorScrips, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get security list: %w", err)
 	}
-	
+
 	// Group securities by sector - get sector info from company details
 	sectorScrips := make(SectorScrips)
-	
+
 	// Process first 50 securities to avoid overwhelming the API
 	maxSecurities := len(securities)
 	if maxSecurities > 50 {
 		maxSecurities = 50
 	}
-	
+
 	for i := 0; i < maxSecurities; i++ {
 		security := securities[i]
-		
+
 		// Skip promoter shares (contain "P" suffix typically)
 		if strings.Contains(security.Symbol, "P") && strings.HasSuffix(security.Symbol, "P") {
 			if sectorScrips["Promoter Share"] == nil {
@@ -318,7 +318,7 @@ func (h *HTTPClient) GetSectorScrips(ctx context.Context) (SectorScrips, error) 
 			sectorScrips["Promoter Share"] = append(sectorScrips["Promoter Share"], security.Symbol)
 			continue
 		}
-		
+
 		// Get company details to find sector
 		details, err := h.GetCompanyDetails(ctx, security.ID)
 		if err != nil {
@@ -329,21 +329,21 @@ func (h *HTTPClient) GetSectorScrips(ctx context.Context) (SectorScrips, error) 
 			sectorScrips["Others"] = append(sectorScrips["Others"], security.Symbol)
 			continue
 		}
-		
+
 		sectorName := details.SectorName
 		if sectorName == "" {
 			sectorName = "Others"
 		}
-		
+
 		if sectorScrips[sectorName] == nil {
 			sectorScrips[sectorName] = make([]string, 0)
 		}
 		sectorScrips[sectorName] = append(sectorScrips[sectorName], security.Symbol)
-		
+
 		// Add small delay to avoid overwhelming the API
 		time.Sleep(50 * time.Millisecond)
 	}
-	
+
 	return sectorScrips, nil
 }
 
@@ -355,18 +355,18 @@ func (h *HTTPClient) FindSecurityBySymbol(ctx context.Context, symbol string) (*
 	if symbol == "" {
 		return nil, NewInvalidClientRequestError("symbol cannot be empty")
 	}
-	
+
 	securities, err := h.GetSecurityList(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get security list: %w", err)
 	}
-	
+
 	for _, security := range securities {
 		if security.Symbol == symbol {
 			return &security, nil
 		}
 	}
-	
+
 	return nil, NewNotFoundError("security with symbol " + symbol)
 }
 
@@ -376,18 +376,18 @@ func (h *HTTPClient) FindCompanyBySymbol(ctx context.Context, symbol string) (*C
 	if symbol == "" {
 		return nil, NewInvalidClientRequestError("symbol cannot be empty")
 	}
-	
+
 	companies, err := h.GetCompanyList(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get company list: %w", err)
 	}
-	
+
 	for _, company := range companies {
 		if company.Symbol == symbol {
 			return &company, nil
 		}
 	}
-	
+
 	return nil, NewNotFoundError("company with symbol " + symbol)
 }
 
@@ -396,50 +396,50 @@ func (h *HTTPClient) FindCompanyBySymbol(ctx context.Context, symbol string) (*C
 // GetFloorSheet retrieves the complete floor sheet data
 func (h *HTTPClient) GetFloorSheet(ctx context.Context) ([]FloorSheetEntry, error) {
 	endpoint := fmt.Sprintf("%s?size=500&sort=contractId,desc", h.config.APIEndpoints["floor_sheet"])
-	
+
 	// Based on error messages, the API returns array directly
 	var floorSheetArray []FloorSheetEntry
 	err := h.apiRequest(ctx, endpoint, &floorSheetArray)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get floor sheet: %w", err)
 	}
-	
+
 	return floorSheetArray, nil
 }
 
 // GetFloorSheetOf retrieves floor sheet data for a specific security on a specific business date
 func (h *HTTPClient) GetFloorSheetOf(ctx context.Context, securityID int32, businessDate string) ([]FloorSheetEntry, error) {
-	endpoint := fmt.Sprintf("%s%d?businessDate=%s&size=500&sort=contractid,desc", 
+	endpoint := fmt.Sprintf("%s%d?businessDate=%s&size=500&sort=contractid,desc",
 		h.config.APIEndpoints["company_floorsheet"], securityID, businessDate)
-	
+
 	// Get first page
 	var firstPage FloorSheetResponse
 	err := h.apiRequest(ctx, endpoint, &firstPage)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get floor sheet for security %d: %w", securityID, err)
 	}
-	
+
 	// Check if there's any data
 	if len(firstPage.FloorSheets.Content) == 0 {
 		return []FloorSheetEntry{}, nil
 	}
-	
+
 	allEntries := firstPage.FloorSheets.Content
 	totalPages := firstPage.FloorSheets.TotalPages
-	
+
 	// Get remaining pages
 	for page := int32(1); page < totalPages; page++ {
 		pageEndpoint := fmt.Sprintf("%s&page=%d", endpoint, page)
-		
+
 		var pageResponse FloorSheetResponse
 		err := h.apiRequest(ctx, pageEndpoint, &pageResponse)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get floor sheet page %d for security %d: %w", page, securityID, err)
 		}
-		
+
 		allEntries = append(allEntries, pageResponse.FloorSheets.Content...)
 	}
-	
+
 	return allEntries, nil
 }
 
@@ -449,7 +449,7 @@ func (h *HTTPClient) GetFloorSheetBySymbol(ctx context.Context, symbol string, b
 	if err != nil {
 		return nil, fmt.Errorf("failed to find security %s: %w", symbol, err)
 	}
-	
+
 	return h.GetFloorSheetOf(ctx, security.ID, businessDate)
 }
 
@@ -459,7 +459,7 @@ func (h *HTTPClient) GetPriceVolumeHistoryBySymbol(ctx context.Context, symbol s
 	if err != nil {
 		return nil, fmt.Errorf("failed to find security %s: %w", symbol, err)
 	}
-	
+
 	return h.GetPriceVolumeHistory(ctx, security.ID, startDate, endDate)
 }
 
@@ -469,7 +469,7 @@ func (h *HTTPClient) GetMarketDepthBySymbol(ctx context.Context, symbol string) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to find security %s: %w", symbol, err)
 	}
-	
+
 	return h.GetMarketDepth(ctx, security.ID)
 }
 
@@ -479,6 +479,6 @@ func (h *HTTPClient) GetCompanyDetailsBySymbol(ctx context.Context, symbol strin
 	if err != nil {
 		return nil, fmt.Errorf("failed to find security %s: %w", symbol, err)
 	}
-	
+
 	return h.GetCompanyDetails(ctx, security.ID)
 }

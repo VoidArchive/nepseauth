@@ -26,7 +26,7 @@ func NewHTTPClient(options *Options) (*HTTPClient, error) {
 	if options == nil {
 		options = DefaultOptions()
 	}
-	
+
 	if options.Config == nil {
 		options.Config = DefaultConfig()
 	}
@@ -60,86 +60,84 @@ func NewHTTPClient(options *Options) (*HTTPClient, error) {
 	}
 	nepseClient.authManager = authManager
 
-
 	return nepseClient, nil
 }
-
 
 // GetTokens implements the auth.NepseHTTP interface for the auth package
 func (h *HTTPClient) GetTokens(ctx context.Context) (*auth.TokenResponse, error) {
 	url := h.config.BaseURL + "/api/authenticate/prove"
-	
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, NewInternalError("failed to create request", err)
 	}
-	
+
 	h.setCommonHeaders(req, false)
-	
+
 	resp, err := h.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, MapHTTPStatusToError(resp.StatusCode, resp.Status)
 	}
-	
+
 	body, err := h.getResponseBody(resp)
 	if err != nil {
 		return nil, NewInternalError("failed to read response body", err)
 	}
 	defer body.Close()
-	
+
 	var tokenResp auth.TokenResponse
 	if err := json.NewDecoder(body).Decode(&tokenResp); err != nil {
 		return nil, NewInternalError("failed to decode token response", err)
 	}
-	
+
 	return &tokenResp, nil
 }
 
 // RefreshTokens implements the auth.NepseHTTP interface for the auth package
 func (h *HTTPClient) RefreshTokens(ctx context.Context, refreshToken string) (*auth.TokenResponse, error) {
 	url := h.config.BaseURL + "/api/authenticate/refresh-token"
-	
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, NewInternalError("failed to create request", err)
 	}
-	
+
 	req.Header.Set("Authorization", "Salter "+refreshToken)
 	h.setCommonHeaders(req, true)
-	
+
 	resp, err := h.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, MapHTTPStatusToError(resp.StatusCode, resp.Status)
 	}
-	
+
 	body, err := h.getResponseBody(resp)
 	if err != nil {
 		return nil, NewInternalError("failed to read response body", err)
 	}
 	defer body.Close()
-	
+
 	var tokenResp auth.TokenResponse
 	if err := json.NewDecoder(body).Decode(&tokenResp); err != nil {
 		return nil, NewInternalError("failed to decode token response", err)
 	}
-	
+
 	return &tokenResp, nil
 }
 
 // doRequest performs HTTP request with retry logic
 func (h *HTTPClient) doRequest(req *http.Request) (*http.Response, error) {
 	var lastErr error
-	
+
 	for attempt := 0; attempt <= h.options.MaxRetries; attempt++ {
 		if attempt > 0 {
 			// Calculate backoff delay
@@ -149,13 +147,13 @@ func (h *HTTPClient) doRequest(req *http.Request) (*http.Response, error) {
 			}
 			time.Sleep(delay)
 		}
-		
+
 		resp, err := h.client.Do(req)
 		if err != nil {
 			lastErr = NewNetworkError(err)
 			continue
 		}
-		
+
 		// Check if we should retry based on status code
 		if resp.StatusCode >= 500 || resp.StatusCode == http.StatusTooManyRequests {
 			resp.Body.Close()
@@ -165,10 +163,10 @@ func (h *HTTPClient) doRequest(req *http.Request) (*http.Response, error) {
 			}
 			continue
 		}
-		
+
 		return resp, nil
 	}
-	
+
 	return nil, lastErr
 }
 
@@ -196,7 +194,7 @@ func (h *HTTPClient) setCommonHeaders(req *http.Request, includeAuth bool) {
 			req.Header.Set(key, value)
 		}
 	}
-	
+
 	// Set additional headers for better browser mimicking
 	req.Header.Set("Sec-Ch-Ua", `"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"`)
 	req.Header.Set("Sec-Ch-Ua-Mobile", "?0")
@@ -218,24 +216,24 @@ func (h *HTTPClient) apiRequestWithRetry(ctx context.Context, endpoint string, r
 	if err != nil {
 		return NewInternalError("failed to get access token", err)
 	}
-	
+
 	url := h.config.BaseURL + endpoint
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return NewInternalError("failed to create request", err)
 	}
-	
+
 	// Set authenticated headers
 	auth.AuthHeader(req, token)
 	req.Header.Set("Content-Type", "application/json")
 	h.setCommonHeaders(req, true)
-	
+
 	resp, err := h.doRequest(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-	
+
 	// Handle token expiration
 	if resp.StatusCode == http.StatusUnauthorized && retryCount == 0 {
 		if err := h.authManager.ForceUpdate(ctx); err != nil {
@@ -243,24 +241,23 @@ func (h *HTTPClient) apiRequestWithRetry(ctx context.Context, endpoint string, r
 		}
 		return h.apiRequestWithRetry(ctx, endpoint, result, retryCount+1)
 	}
-	
+
 	if resp.StatusCode != http.StatusOK {
 		return MapHTTPStatusToError(resp.StatusCode, resp.Status)
 	}
-	
+
 	body, err := h.getResponseBody(resp)
 	if err != nil {
 		return NewInternalError("failed to read response body", err)
 	}
 	defer body.Close()
-	
+
 	if err := json.NewDecoder(body).Decode(result); err != nil {
 		return NewInternalError("failed to decode response", err)
 	}
-	
+
 	return nil
 }
-
 
 // SetTLSVerification sets TLS verification on/off
 func (h *HTTPClient) SetTLSVerification(enabled bool) {
@@ -279,8 +276,6 @@ func (h *HTTPClient) GetConfig() *Config {
 func (h *HTTPClient) TestGetRequest(ctx context.Context, endpoint string, result any) error {
 	return h.apiRequest(ctx, endpoint, result)
 }
-
-
 
 // Close closes the HTTP client and auth manager
 func (h *HTTPClient) Close(ctx context.Context) error {

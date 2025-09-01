@@ -65,11 +65,11 @@ type Client interface {
 	FindCompanyBySymbol(ctx context.Context, symbol string) (*Company, error)
 	GetFloorSheetBySymbol(ctx context.Context, symbol string, businessDate string) ([]FloorSheetEntry, error)
 	GetPriceVolumeHistoryBySymbol(ctx context.Context, symbol string, startDate, endDate string) ([]PriceHistory, error)
-	
+
 	// Configuration
 	SetTLSVerification(enabled bool)
 	GetConfig() *Config
-	
+
 	// Lifecycle
 	Close(ctx context.Context) error
 }
@@ -78,19 +78,19 @@ type Client interface {
 type Options struct {
 	// BaseURL overrides the default NEPSE API base URL
 	BaseURL string
-	
+
 	// TLSVerification enables/disables TLS certificate verification
 	TLSVerification bool
-	
+
 	// HTTPTimeout sets the HTTP request timeout
 	HTTPTimeout time.Duration
-	
+
 	// MaxRetries sets the maximum number of retries for failed requests
 	MaxRetries int
-	
+
 	// RetryDelay sets the base delay between retries
 	RetryDelay time.Duration
-	
+
 	// Config overrides the default configuration
 	Config *Config
 }

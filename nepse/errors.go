@@ -17,7 +17,7 @@ type ErrorType string
 
 const (
 	ErrorTypeInvalidClientRequest  ErrorType = "invalid_client_request"
-	ErrorTypeInvalidServerResponse ErrorType = "invalid_server_response" 
+	ErrorTypeInvalidServerResponse ErrorType = "invalid_server_response"
 	ErrorTypeTokenExpired          ErrorType = "token_expired"
 	ErrorTypeNetworkError          ErrorType = "network_error"
 	ErrorTypeUnauthorized          ErrorType = "unauthorized"
