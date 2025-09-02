@@ -23,29 +23,34 @@ type HTTPClient struct {
 
 // NewHTTPClient creates a new HTTP client for NEPSE API
 func NewHTTPClient(options *Options) (*HTTPClient, error) {
-	if options == nil {
-		options = DefaultOptions()
-	}
+    if options == nil {
+        options = DefaultOptions()
+    }
 
 	if options.Config == nil {
 		options.Config = DefaultConfig()
 	}
 
-	// Create HTTP transport
-	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: !options.TLSVerification,
-		},
-		MaxIdleConns:        100,
-		MaxIdleConnsPerHost: 10,
-		IdleConnTimeout:     90 * time.Second,
-	}
-
-	// Create HTTP client
-	httpClient := &http.Client{
-		Timeout:   options.HTTPTimeout,
-		Transport: transport,
-	}
+    // Create or use provided HTTP client
+    httpClient := options.HTTPClient
+    if httpClient == nil {
+        // Only construct transport if no client supplied
+        transport := &http.Transport{
+            TLSClientConfig: &tls.Config{ //nolint:gosec // user controls via TLSVerification
+                InsecureSkipVerify: !options.TLSVerification,
+            },
+            MaxIdleConns:        100,
+            MaxIdleConnsPerHost: 10,
+            IdleConnTimeout:     90 * time.Second,
+        }
+        httpClient = &http.Client{
+            Timeout:   options.HTTPTimeout,
+            Transport: transport,
+        }
+    } else if httpClient.Timeout == 0 {
+        // Ensure a reasonable default timeout if caller didn't set one
+        httpClient.Timeout = options.HTTPTimeout
+    }
 
 	nepseClient := &HTTPClient{
 		client:  httpClient,

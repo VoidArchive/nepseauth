@@ -1,6 +1,6 @@
 module github.com/voidarchive/nepseauth
 
-go 1.24.6
+go 1.25.0
 
 require (
 	github.com/tetratelabs/wazero v1.9.0

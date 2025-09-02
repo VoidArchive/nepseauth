@@ -1,8 +1,9 @@
 package nepse
 
 import (
-	"context"
-	"time"
+    "context"
+    "net/http"
+    "time"
 )
 
 // Client defines the interface for NEPSE API operations
@@ -78,8 +79,8 @@ type Client interface {
 
 // Options represents configuration options for creating a new NEPSE client
 type Options struct {
-	// BaseURL overrides the default NEPSE API base URL
-	BaseURL string
+    // BaseURL overrides the default NEPSE API base URL
+    BaseURL string
 
 	// TLSVerification enables/disables TLS certificate verification
 	TLSVerification bool
@@ -90,11 +91,15 @@ type Options struct {
 	// MaxRetries sets the maximum number of retries for failed requests
 	MaxRetries int
 
-	// RetryDelay sets the base delay between retries
-	RetryDelay time.Duration
+    // RetryDelay sets the base delay between retries
+    RetryDelay time.Duration
 
-	// Config overrides the default configuration
-	Config *Config
+    // Config overrides the default configuration
+    Config *Config
+
+    // HTTPClient allows supplying a custom *http.Client.
+    // If nil, a sane default client and transport are created using other options.
+    HTTPClient *http.Client
 }
 
 // DefaultOptions returns default options for the NEPSE client
