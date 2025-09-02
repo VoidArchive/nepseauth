@@ -104,11 +104,7 @@ func main() {
 	} else {
 		nabilID = sec.ID
 		fmt.Printf("- %s ID: %d\n", symbol, nabilID)
-	}
-	if co, err := client.FindCompanyBySymbol(ctx, symbol); err != nil {
-		log.Printf("Find company %s: %v", symbol, err)
-	} else {
-		fmt.Printf("- Company: %s (%s)\n", co.SecurityName, co.SectorName)
+		fmt.Printf("- Company: %s (%s)\n", sec.SecurityName, sec.SectorName)
 	}
 	if nabilID != 0 {
 		if det, err := client.GetCompanyDetails(ctx, nabilID); err != nil {
@@ -295,21 +291,6 @@ func main() {
 		} else {
 			fmt.Printf("- %s graph pts: %d\n", symbol, len(g.Data))
 		}
-	}
-
-	// 6) Helper convenience by symbol
-	fmt.Println("\n[Helpers] By Symbol")
-	if *withFloor {
-		if fs, err := client.GetFloorSheetBySymbol(ctx, symbol, effBizDate); err != nil {
-			fmt.Printf("- FloorsheetBySymbol(%s:%s): error (%v)\n", symbol, effBizDate, err)
-		} else {
-			fmt.Printf("- FloorsheetBySymbol(%s:%s): %d\n", symbol, effBizDate, len(fs))
-		}
-	}
-	if hist, err := client.GetPriceVolumeHistoryBySymbol(ctx, symbol, start, end); err != nil {
-		fmt.Printf("- HistoryBySymbol(%s): error (%v)\n", symbol, err)
-	} else {
-		fmt.Printf("- HistoryBySymbol(%s): %d\n", symbol, len(hist))
 	}
 
 	fmt.Println("\n🎉 Finished exercising all public APIs.")

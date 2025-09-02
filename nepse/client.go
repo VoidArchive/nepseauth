@@ -19,11 +19,13 @@ type Client interface {
 	GetSecurityList(ctx context.Context) ([]Security, error)
 	GetCompanyList(ctx context.Context) ([]Company, error)
 	GetCompanyDetails(ctx context.Context, securityID int32) (*CompanyDetails, error)
+	GetCompanyDetailsBySymbol(ctx context.Context, symbol string) (*CompanyDetails, error)
 	GetSectorScrips(ctx context.Context) (SectorScrips, error)
 
 	// Price and Trading Data
 	GetTodaysPrices(ctx context.Context, businessDate string) ([]TodayPrice, error)
 	GetPriceVolumeHistory(ctx context.Context, securityID int32, startDate, endDate string) ([]PriceHistory, error)
+	GetPriceVolumeHistoryBySymbol(ctx context.Context, symbol string, startDate, endDate string) ([]PriceHistory, error)
 	GetSupplyDemand(ctx context.Context) ([]SupplyDemandEntry, error)
     GetMarketDepth(ctx context.Context, securityID int32) (*MarketDepth, error)
     GetMarketDepthBySymbol(ctx context.Context, symbol string) (*MarketDepth, error)
@@ -38,6 +40,7 @@ type Client interface {
 	// Floor Sheet
 	GetFloorSheet(ctx context.Context) ([]FloorSheetEntry, error)
 	GetFloorSheetOf(ctx context.Context, securityID int32, businessDate string) ([]FloorSheetEntry, error)
+	GetFloorSheetBySymbol(ctx context.Context, symbol string, businessDate string) ([]FloorSheetEntry, error)
 
 	// Graph Data (GET endpoints)
 	GetDailyNepseIndexGraph(ctx context.Context) (*GraphResponse, error)
@@ -63,11 +66,8 @@ type Client interface {
 	GetDailyTradingSubindexGraph(ctx context.Context) (*GraphResponse, error)
 
 	// Helper Methods
+	FindSecurity(ctx context.Context, securityID int32) (*Security, error)
 	FindSecurityBySymbol(ctx context.Context, symbol string) (*Security, error)
-    FindCompanyBySymbol(ctx context.Context, symbol string) (*Company, error)
-    GetFloorSheetBySymbol(ctx context.Context, symbol string, businessDate string) ([]FloorSheetEntry, error)
-    GetPriceVolumeHistoryBySymbol(ctx context.Context, symbol string, startDate, endDate string) ([]PriceHistory, error)
-    GetCompanyDetailsBySymbol(ctx context.Context, symbol string) (*CompanyDetails, error)
 
 	// Configuration
 	SetTLSVerification(enabled bool)

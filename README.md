@@ -4,9 +4,8 @@ A modern, type-safe Go client library for the NEPSE (Nepal Stock Exchange) API. 
 
 ## Features
 
-- ✅ **Type-safe API** - No `interface{}` or `any` types in public interfaces
 - ✅ **Clean Architecture** - Modular design with clear separation of concerns
-- ✅ **Comprehensive Coverage** - All NEPSE API endpoints supported
+- ✅ **Broad Coverage** - Major NEPSE market data endpoints supported
 - ✅ **Automatic Authentication** - Token management handled transparently
 - ✅ **Retry Logic** - Built-in retry with exponential backoff
 - ✅ **Context Support** - Full context.Context support for cancellation and timeouts
@@ -49,7 +48,7 @@ func main() {
     }
     
     fmt.Printf("Total Turnover: Rs. %.2f\\n", summary.TotalTurnover)
-    fmt.Printf("Total Trades: %d\\n", summary.TotalTrades)
+    fmt.Printf("Total Transactions: %.0f\\n", summary.TotalTransactions)
     
     // Find a company by symbol
     security, err := client.FindSecurityBySymbol(ctx, "NABIL")
@@ -71,6 +70,7 @@ func main() {
 ## API Coverage
 
 ### Market Data
+
 - `GetMarketSummary()` - Overall market statistics
 - `GetMarketStatus()` - Current market open/close status
 - `GetNepseIndex()` - NEPSE main index information
@@ -79,14 +79,15 @@ func main() {
 - `GetSupplyDemand()` - Supply and demand information
 
 ### Securities & Companies
+
 - `GetSecurityList()` - All listed securities
 - `GetCompanyList()` - All listed companies
 - `GetCompanyDetails(securityID)` - Detailed company information
 - `GetSectorScrips()` - Securities grouped by sector
 - `FindSecurityBySymbol(symbol)` - Find security by symbol
-- `FindCompanyBySymbol(symbol)` - Find company by symbol
 
 ### Price & Trading Data
+
 - `GetTodaysPrices(businessDate)` - Today's price data
 - `GetPriceVolumeHistory(securityID, startDate, endDate)` - Historical prices
 - `GetMarketDepth(securityID)` - Market depth information
@@ -94,6 +95,7 @@ func main() {
 - `GetFloorSheetOf(securityID, businessDate)` - Company-specific floor sheet
 
 ### Top Lists
+
 - `GetTopGainers()` - Top gaining securities
 - `GetTopLosers()` - Top losing securities  
 - `GetTopTenTrade()` - Top by trade volume
@@ -101,12 +103,14 @@ func main() {
 - `GetTopTenTurnover()` - Top by turnover
 
 ### Graph Data (Technical Analysis)
+
 - `GetDailyNepseIndexGraph()` - NEPSE index chart data
 - `GetDailySensitiveIndexGraph()` - Sensitive index chart
 - `GetDailyFloatIndexGraph()` - Float index chart
 - `GetDailyScripPriceGraph(securityID)` - Individual security chart
 
 ### Sector Sub-Index Graphs
+
 - `GetDailyBankSubindexGraph()` - Banking sector index
 - `GetDailyFinanceSubindexGraph()` - Finance sector index
 - `GetDailyHydroSubindexGraph()` - Hydro sector index
@@ -173,41 +177,27 @@ The library is organized into several packages:
 
 ## Examples
 
-See the `examples/` directory for more comprehensive usage examples:
+See `cmd/examples` for usage examples:
 
-- `examples/basic_usage.go` - Basic API usage examples
-- `main.go` - NABIL company data testing
+- `cmd/examples/basic_usage.go` - Basic API usage examples
+- `main.go` - Simple NABIL summary demo
 
 ## Testing
 
 ### Against Real NEPSE API
+
 ```bash
 # Run the main test with NABIL data
 go run main.go
 
 # Run the basic usage example
-go run examples/basic_usage.go
+go run cmd/examples/basic_usage.go
 ```
 
-### Against Mock Server
-```bash
-# Start the mock API server
-make run-mock
+### Notes
 
-# In another terminal, run the demo
-go run examples/mock_demo.go
-
-# View interactive API documentation
-open http://localhost:8080/swagger/
-```
-
-### API Documentation
-This library includes comprehensive API documentation and a mock server:
-
-- **📖 API Documentation**: `API_README.md`
-- **🎭 Mock Server**: Fully functional NEPSE API mock
-- **📋 OpenAPI 3.0 Spec**: `api/swagger.yaml`
-- **🐳 Docker Support**: Ready for containerized deployment
+- Real API calls require valid NEPSE tokens. The library handles token mint/refresh using an embedded WASM parser.
+- A separate mock server and OpenAPI spec are not included in this repository at the moment.
 
 ## Contributing
 
@@ -217,12 +207,10 @@ This library includes comprehensive API documentation and a mock server:
 4. Include examples for new functionality
 5. Update documentation for API changes
 
+## Go Version
+
+- Requires Go 1.23+
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- Original Python implementation: [NepseUnofficialApi](./NepseUnofficialApi/)
-- NEPSE for providing the API endpoints
-- Go community for excellent tooling and libraries

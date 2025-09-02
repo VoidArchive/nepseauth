@@ -311,3 +311,4 @@ type PaginatedResponse[T any] struct {
 	Last             bool  `json:"last"`
 	NumberOfElements int32 `json:"numberOfElements"`
 }
+

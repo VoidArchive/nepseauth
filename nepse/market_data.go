@@ -2,12 +2,11 @@ package nepse
 
 import (
     "context"
-    "fmt"
-    "strings"
-    "time"
-    "net/http"
     "encoding/json"
+    "fmt"
     "io"
+    "net/http"
+    "strings"
 
     "github.com/voidarchive/nepseauth/auth"
 )
@@ -293,7 +292,7 @@ func (h *HTTPClient) GetTodaysPrices(ctx context.Context, businessDate string) (
 	return todayPrices, nil
 }
 
-// GetPriceVolumeHistory retrieves price volume history for a security
+// GetPriceVolumeHistory retrieves price volume history for a security by ID
 func (h *HTTPClient) GetPriceVolumeHistory(ctx context.Context, securityID int32, startDate, endDate string) ([]PriceHistory, error) {
 	endpoint := fmt.Sprintf("%s%d?size=500&startDate=%s&endDate=%s",
 		h.config.APIEndpoints["company_price_volume_history"], securityID, startDate, endDate)
@@ -310,7 +309,16 @@ func (h *HTTPClient) GetPriceVolumeHistory(ctx context.Context, securityID int32
 	return response.Content, nil
 }
 
-// GetMarketDepth retrieves market depth information for a security
+// GetPriceVolumeHistoryBySymbol retrieves price volume history for a security by symbol
+func (h *HTTPClient) GetPriceVolumeHistoryBySymbol(ctx context.Context, symbol string, startDate, endDate string) ([]PriceHistory, error) {
+	security, err := h.findSecurityBySymbol(ctx, symbol)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find security %s: %w", symbol, err)
+	}
+	return h.GetPriceVolumeHistory(ctx, security.ID, startDate, endDate)
+}
+
+// GetMarketDepth retrieves market depth information for a security by ID
 func (h *HTTPClient) GetMarketDepth(ctx context.Context, securityID int32) (*MarketDepth, error) {
 	endpoint := fmt.Sprintf("%s%d/", h.config.APIEndpoints["market_depth"], securityID)
 
@@ -320,6 +328,15 @@ func (h *HTTPClient) GetMarketDepth(ctx context.Context, securityID int32) (*Mar
 		return nil, fmt.Errorf("failed to get market depth for security %d: %w", securityID, err)
 	}
 	return &marketDepth, nil
+}
+
+// GetMarketDepthBySymbol retrieves market depth information for a security by symbol
+func (h *HTTPClient) GetMarketDepthBySymbol(ctx context.Context, symbol string) (*MarketDepth, error) {
+	security, err := h.findSecurityBySymbol(ctx, symbol)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find security %s: %w", symbol, err)
+	}
+	return h.GetMarketDepth(ctx, security.ID)
 }
 
 // Security and Company Methods
@@ -344,7 +361,7 @@ func (h *HTTPClient) GetCompanyList(ctx context.Context) ([]Company, error) {
 	return companies, nil
 }
 
-// GetCompanyDetails retrieves detailed information about a specific company/security
+// GetCompanyDetails retrieves detailed information about a specific company/security by ID
 func (h *HTTPClient) GetCompanyDetails(ctx context.Context, securityID int32) (*CompanyDetails, error) {
 	endpoint := fmt.Sprintf("%s%d", h.config.APIEndpoints["company_details"], securityID)
 
@@ -382,8 +399,16 @@ func (h *HTTPClient) GetCompanyDetails(ctx context.Context, securityID int32) (*
 	return details, nil
 }
 
-// GetSectorScrips groups securities by their sector
-// Note: This is a slower operation as it requires fetching detailed company info
+// GetCompanyDetailsBySymbol retrieves detailed information about a specific company/security by symbol
+func (h *HTTPClient) GetCompanyDetailsBySymbol(ctx context.Context, symbol string) (*CompanyDetails, error) {
+	security, err := h.findSecurityBySymbol(ctx, symbol)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find security %s: %w", symbol, err)
+	}
+	return h.GetCompanyDetails(ctx, security.ID)
+}
+
+// GetSectorScrips groups securities by their sector using data already available in the security list
 func (h *HTTPClient) GetSectorScrips(ctx context.Context) (SectorScrips, error) {
 	// Get security list
 	securities, err := h.GetSecurityList(ctx)
@@ -391,47 +416,35 @@ func (h *HTTPClient) GetSectorScrips(ctx context.Context) (SectorScrips, error) 
 		return nil, fmt.Errorf("failed to get security list: %w", err)
 	}
 
-	// Group securities by sector - get sector info from company details
+	// Group securities by sector using existing sector data
 	sectorScrips := make(SectorScrips)
 
-	// Process first 50 securities to avoid overwhelming the API
-	maxSecurities := min(len(securities), 50)
+	for _, security := range securities {
+		// Skip suspended securities
+		if security.IsSuspended {
+			continue
+		}
 
-	for i := range maxSecurities {
-		security := securities[i]
+		var sectorName string
 
-		// Skip promoter shares (contain "P" suffix typically)
+		// Check for promoter shares (contain "P" suffix typically)
 		if strings.Contains(security.Symbol, "P") && strings.HasSuffix(security.Symbol, "P") {
-			if sectorScrips["Promoter Share"] == nil {
-				sectorScrips["Promoter Share"] = make([]string, 0)
+			sectorName = "Promoter Share"
+		} else {
+			// Use the sector name from the security struct
+			sectorName = security.SectorName
+			if sectorName == "" {
+				sectorName = "Others"
 			}
-			sectorScrips["Promoter Share"] = append(sectorScrips["Promoter Share"], security.Symbol)
-			continue
 		}
 
-		// Get company details to find sector
-		details, err := h.GetCompanyDetails(ctx, security.ID)
-		if err != nil {
-			// If we can't get details, put in "Others" category
-			if sectorScrips["Others"] == nil {
-				sectorScrips["Others"] = make([]string, 0)
-			}
-			sectorScrips["Others"] = append(sectorScrips["Others"], security.Symbol)
-			continue
-		}
-
-		sectorName := details.SectorName
-		if sectorName == "" {
-			sectorName = "Others"
-		}
-
+		// Initialize slice if it doesn't exist
 		if sectorScrips[sectorName] == nil {
 			sectorScrips[sectorName] = make([]string, 0)
 		}
+		
+		// Add security symbol to the sector
 		sectorScrips[sectorName] = append(sectorScrips[sectorName], security.Symbol)
-
-		// Add small delay to avoid overwhelming the API
-		time.Sleep(50 * time.Millisecond)
 	}
 
 	return sectorScrips, nil
@@ -439,8 +452,38 @@ func (h *HTTPClient) GetSectorScrips(ctx context.Context) (SectorScrips, error) 
 
 // Helper Methods
 
-// FindSecurityBySymbol finds a security by its symbol
+// FindSecurity finds a security by ID
+func (h *HTTPClient) FindSecurity(ctx context.Context, securityID int32) (*Security, error) {
+	return h.findSecurityByID(ctx, securityID)
+}
+
+// FindSecurityBySymbol finds a security by symbol  
 func (h *HTTPClient) FindSecurityBySymbol(ctx context.Context, symbol string) (*Security, error) {
+	return h.findSecurityBySymbol(ctx, symbol)
+}
+
+// findSecurityByID finds a security by its ID
+func (h *HTTPClient) findSecurityByID(ctx context.Context, id int32) (*Security, error) {
+	if id <= 0 {
+		return nil, NewInvalidClientRequestError("security ID must be positive")
+	}
+
+	securities, err := h.GetSecurityList(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get security list: %w", err)
+	}
+
+	for _, security := range securities {
+		if security.ID == id {
+			return &security, nil
+		}
+	}
+
+	return nil, NewNotFoundError(fmt.Sprintf("security with ID %d", id))
+}
+
+// findSecurityBySymbol finds a security by its symbol
+func (h *HTTPClient) findSecurityBySymbol(ctx context.Context, symbol string) (*Security, error) {
 	symbol = strings.ToUpper(strings.TrimSpace(symbol))
 	if symbol == "" {
 		return nil, NewInvalidClientRequestError("symbol cannot be empty")
@@ -460,26 +503,6 @@ func (h *HTTPClient) FindSecurityBySymbol(ctx context.Context, symbol string) (*
 	return nil, NewNotFoundError("security with symbol " + symbol)
 }
 
-// FindCompanyBySymbol finds a company by its symbol
-func (h *HTTPClient) FindCompanyBySymbol(ctx context.Context, symbol string) (*Company, error) {
-	symbol = strings.ToUpper(strings.TrimSpace(symbol))
-	if symbol == "" {
-		return nil, NewInvalidClientRequestError("symbol cannot be empty")
-	}
-
-	companies, err := h.GetCompanyList(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get company list: %w", err)
-	}
-
-	for _, company := range companies {
-		if company.Symbol == symbol {
-			return &company, nil
-		}
-	}
-
-	return nil, NewNotFoundError("company with symbol " + symbol)
-}
 
 // Floor Sheet Methods
 
@@ -511,8 +534,9 @@ func (h *HTTPClient) GetFloorSheet(ctx context.Context) ([]FloorSheetEntry, erro
     return all, nil
 }
 
-// GetFloorSheetOf retrieves floor sheet data for a specific security on a specific business date
+// GetFloorSheetOf retrieves floor sheet data for a specific security on a specific business date by ID
 func (h *HTTPClient) GetFloorSheetOf(ctx context.Context, securityID int32, businessDate string) ([]FloorSheetEntry, error) {
+
 	endpoint := fmt.Sprintf("%s%d?businessDate=%s&size=500&sort=contractid,desc",
 		h.config.APIEndpoints["company_floorsheet"], securityID, businessDate)
 
@@ -547,46 +571,11 @@ func (h *HTTPClient) GetFloorSheetOf(ctx context.Context, securityID int32, busi
 	return allEntries, nil
 }
 
-// Convenience method to get floor sheet by symbol instead of ID
-
+// GetFloorSheetBySymbol retrieves floor sheet data for a specific security by symbol
 func (h *HTTPClient) GetFloorSheetBySymbol(ctx context.Context, symbol string, businessDate string) ([]FloorSheetEntry, error) {
-	security, err := h.FindSecurityBySymbol(ctx, symbol)
+	security, err := h.findSecurityBySymbol(ctx, symbol)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find security %s: %w", symbol, err)
 	}
-
 	return h.GetFloorSheetOf(ctx, security.ID, businessDate)
-}
-
-// Convenience method to get price history by symbol instead of ID
-
-func (h *HTTPClient) GetPriceVolumeHistoryBySymbol(ctx context.Context, symbol string, startDate, endDate string) ([]PriceHistory, error) {
-	security, err := h.FindSecurityBySymbol(ctx, symbol)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find security %s: %w", symbol, err)
-	}
-
-	return h.GetPriceVolumeHistory(ctx, security.ID, startDate, endDate)
-}
-
-// Convenience method to get market depth by symbol instead of ID
-
-func (h *HTTPClient) GetMarketDepthBySymbol(ctx context.Context, symbol string) (*MarketDepth, error) {
-	security, err := h.FindSecurityBySymbol(ctx, symbol)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find security %s: %w", symbol, err)
-	}
-
-	return h.GetMarketDepth(ctx, security.ID)
-}
-
-// Convenience method to get company details by symbol instead of ID
-
-func (h *HTTPClient) GetCompanyDetailsBySymbol(ctx context.Context, symbol string) (*CompanyDetails, error) {
-	security, err := h.FindSecurityBySymbol(ctx, symbol)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find security %s: %w", symbol, err)
-	}
-
-	return h.GetCompanyDetails(ctx, security.ID)
 }
