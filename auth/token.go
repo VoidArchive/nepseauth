@@ -331,7 +331,6 @@ func (p *tokenParser) indicesFromSalts(s [5]int) (tokenIndices, error) {
 		return int(int32(res[0])), nil
 	}
 
-	// Python:
 	// n = cdx(s1,s2,s3,s4,s5)
 	// l = rdx(s1,s2,s4,s3,s5)
 	// o = bdx(s1,s2,s4,s3,s5)
@@ -359,7 +358,6 @@ func (p *tokenParser) indicesFromSalts(s [5]int) (tokenIndices, error) {
 		return tokenIndices{}, err
 	}
 
-	// Python:
 	// a = cdx(s2,s1,s3,s5,s4)
 	// b = rdx(s2,s1,s3,s4,s5)
 	// c = bdx(s2,s1,s4,s3,s5)
