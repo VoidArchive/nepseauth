@@ -56,14 +56,14 @@ func main() {
         log.Fatalf("Failed to find NABIL: %v", err)
     }
     
-    // Get company details
-    details, err := client.GetCompanyDetails(ctx, security.ID)
+    // Get company details - can use either ID or symbol
+    details, err := client.GetCompanyDetailsBySymbol(ctx, "NABIL")
     if err != nil {
         log.Fatalf("Failed to get company details: %v", err)
     }
     
-    fmt.Printf("Company: %s, Market Cap: Rs. %.2f\\n", 
-        details.SecurityName, details.MarketCapitalization)
+    fmt.Printf("Company: %s, Sector: %s, LTP: Rs. %.2f\\n", 
+        details.SecurityName, details.SectorName, details.LastTradedPrice)
 }
 ```
 
@@ -82,17 +82,17 @@ func main() {
 
 - `GetSecurityList()` - All listed securities
 - `GetCompanyList()` - All listed companies
-- `GetCompanyDetails(securityID)` - Detailed company information
-- `GetSectorScrips()` - Securities grouped by sector
-- `FindSecurityBySymbol(symbol)` - Find security by symbol
+- `GetCompanyDetails(securityID)` / `GetCompanyDetailsBySymbol(symbol)` - Detailed company information
+- `GetSectorScrips()` - Securities grouped by sector (fast, no API calls needed)
+- `FindSecurity(securityID)` / `FindSecurityBySymbol(symbol)` - Find security by ID or symbol
 
 ### Price & Trading Data
 
 - `GetTodaysPrices(businessDate)` - Today's price data
-- `GetPriceVolumeHistory(securityID, startDate, endDate)` - Historical prices
-- `GetMarketDepth(securityID)` - Market depth information
+- `GetPriceVolumeHistory(securityID, startDate, endDate)` / `GetPriceVolumeHistoryBySymbol(symbol, startDate, endDate)` - Historical prices
+- `GetMarketDepth(securityID)` / `GetMarketDepthBySymbol(symbol)` - Market depth information
 - `GetFloorSheet()` - Complete floor sheet data
-- `GetFloorSheetOf(securityID, businessDate)` - Company-specific floor sheet
+- `GetFloorSheetOf(securityID, businessDate)` / `GetFloorSheetBySymbol(symbol, businessDate)` - Company-specific floor sheet
 
 ### Top Lists
 
@@ -102,12 +102,14 @@ func main() {
 - `GetTopTenTransaction()` - Top by transaction count
 - `GetTopTenTurnover()` - Top by turnover
 
-### Graph Data (Technical Analysis)
+### Graph Data (Technical Analysis) - **⚠️ Currently Non-Functional**
+
+**Note**: Graph endpoints currently return empty data due to NEPSE API backend issues.
 
 - `GetDailyNepseIndexGraph()` - NEPSE index chart data
 - `GetDailySensitiveIndexGraph()` - Sensitive index chart
 - `GetDailyFloatIndexGraph()` - Float index chart
-- `GetDailyScripPriceGraph(securityID)` - Individual security chart
+- `GetDailyScripPriceGraph(securityID)` / `GetDailyScripPriceGraphBySymbol(symbol)` - Individual security chart
 
 ### Sector Sub-Index Graphs
 
@@ -121,7 +123,7 @@ func main() {
 ```go
 options := &nepse.Options{
     BaseURL:         "https://www.nepalstock.com",
-    TLSVerification: true,
+    TLSVerification: true,  // Note: May need to be false due to NEPSE server TLS issues
     HTTPTimeout:     30 * time.Second,
     MaxRetries:      3,
     RetryDelay:      time.Second,
@@ -129,6 +131,10 @@ options := &nepse.Options{
 
 client, err := nepse.NewClient(options)
 ```
+
+### Important Security Note
+
+The `TLSVerification: false` option exists due to TLS configuration issues on NEPSE's servers (nepalstock.com). This is a known limitation of the NEPSE API infrastructure, not the client library. When NEPSE fixes their TLS configuration, always use `TLSVerification: true` for production deployments.
 
 ## Error Handling
 
@@ -199,13 +205,38 @@ go run cmd/examples/basic_usage.go
 - Real API calls require valid NEPSE tokens. The library handles token mint/refresh using an embedded WASM parser.
 - A separate mock server and OpenAPI spec are not included in this repository at the moment.
 
+## API Design Philosophy
+
+This library follows modern Go best practices:
+
+### Type-Safe Dual API Pattern
+
+Most methods that work with securities provide both ID and symbol variants:
+
+```go
+// Primary methods (faster, direct)
+client.GetMarketDepth(ctx, int32(131))              // By ID
+client.GetCompanyDetails(ctx, int32(131))           // By ID
+
+// Convenience methods (easier to use)
+client.GetMarketDepthBySymbol(ctx, "NABIL")        // By symbol  
+client.GetCompanyDetailsBySymbol(ctx, "NABIL")     // By symbol
+```
+
+### Performance Optimizations
+
+- **Fast Sector Grouping**: `GetSectorScrips()` uses existing data, no API calls needed
+- **Connection Pooling**: Efficient HTTP connection reuse
+- **Smart Retry Logic**: Exponential backoff with circuit breaking
+
 ## Contributing
 
 1. Follow Go best practices and conventions
-2. Maintain type safety - no `interface{}` or `any` in public APIs
+2. Maintain type safety - no `interface{}` or `any` in public APIs  
 3. Add proper error handling for all new features
 4. Include examples for new functionality
 5. Update documentation for API changes
+6. **Security First**: All contributions must pass security review
 
 ## Go Version
 
